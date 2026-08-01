@@ -257,7 +257,14 @@ closeBtn.onclick = function () {
 // ----------------------------
 function sendResult(text) {
 
+    debug("sendResult() ถูกเรียก");
+    debug("TEXT = " + text);
+    debug("SESSION = " + SESSION);
+    debug("window.opener = " + !!window.opener);
+
     if (window.opener && !window.opener.closed) {
+
+        debug("กำลัง postMessage");
 
         window.opener.postMessage({
             type: "QR_RESULT",
@@ -265,13 +272,18 @@ function sendResult(text) {
             text: text
         }, "*");
 
+        debug("postMessage ส่งแล้ว");
+
+    } else {
+
+        debug("window.opener ไม่มี");
+
     }
 
-    setTimeout(() => {
-        window.close();
-    }, 150);
-
+    // ยังไม่ต้องปิดหน้าต่าง
 }
+
+
 
 // ----------------------------
 // สลับกล้อง
@@ -372,4 +384,13 @@ document.addEventListener(
         }
 
     }
+
+
+    function debug(msg) {
+    const el = document.getElementById("debug");
+    if (el) {
+        el.innerHTML += "<br>" + msg;
+    }
+}
+
 );
