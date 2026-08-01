@@ -232,8 +232,9 @@ function finish(text) {
     // สั่น 80ms
     if (navigator.vibrate)
         navigator.vibrate(80);
-    
-    stopCamera();   
+
+    stopCamera();
+
     sendResult(text);
 
 }
@@ -251,18 +252,10 @@ closeBtn.onclick = function () {
 
 };
 
-
 // ----------------------------
 // ส่งผลกลับ Apps Script
 // ----------------------------
 function sendResult(text) {
-
-    document.getElementById("debug").innerHTML +=
-        "<hr>" +
-        "<b>SEND</b><br>" +
-        "SESSION = " + SESSION + "<br>" +
-        "TEXT = " + text + "<br>" +
-        "window.opener = " + (!!window.opener);
 
     if (window.opener && !window.opener.closed) {
 
@@ -274,15 +267,11 @@ function sendResult(text) {
 
     }
 
-    // ปิดช้าลงเพื่อให้เราเห็นข้อความ
     setTimeout(() => {
         window.close();
-    }, 3000);
+    }, 150);
 
 }
-
-
-
 
 // ----------------------------
 // สลับกล้อง
