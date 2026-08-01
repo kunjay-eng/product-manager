@@ -252,9 +252,6 @@ closeBtn.onclick = function () {
 
 };
 
-// ----------------------------
-// ส่งผลกลับ Apps Script
-// ----------------------------
 
 // ----------------------------
 // ส่งผลกลับ Apps Script
@@ -271,13 +268,11 @@ function sendResult(text) {
 
     }
 
- //   setTimeout(() => {
-      //  window.close();
- //   }, 150);
+    setTimeout(() => {
+        window.close();
+    }, 150);
 
 }
-
-
 
 // ----------------------------
 // สลับกล้อง
@@ -378,13 +373,4 @@ document.addEventListener(
         }
 
     }
-
-
-    function debug(msg) {
-    const el = document.getElementById("debug");
-    if (el) {
-        el.innerHTML += "<br>" + msg;
-    }
-}
-
 );
