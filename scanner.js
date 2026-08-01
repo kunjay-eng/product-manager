@@ -257,6 +257,13 @@ closeBtn.onclick = function () {
 // ----------------------------
 function sendResult(text) {
 
+    document.getElementById("debug").innerHTML +=
+        "<hr>" +
+        "<b>SEND</b><br>" +
+        "SESSION = " + SESSION + "<br>" +
+        "TEXT = " + text + "<br>" +
+        "window.opener = " + (!!window.opener);
+
     if (window.opener && !window.opener.closed) {
 
         window.opener.postMessage({
@@ -267,11 +274,14 @@ function sendResult(text) {
 
     }
 
+    // ปิดช้าลงเพื่อให้เราเห็นข้อความ
     setTimeout(() => {
         window.close();
-    }, 150);
+    }, 3000);
 
 }
+
+
 
 
 // ----------------------------
