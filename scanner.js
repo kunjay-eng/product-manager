@@ -196,6 +196,9 @@ async function scanLoop() {
                         img.height
                     );
 
+
+
+
                 if (qr && qr.data) {
 
                     finish(qr.data);
@@ -330,7 +333,8 @@ qrFile.onchange = function(e){
                 imageData.width,
                 imageData.height
             );
-
+        
+        URL.revokeObjectURL(img.src);
 
         if(qr && qr.data){
 
