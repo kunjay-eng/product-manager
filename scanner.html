@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport"
+      content="width=device-width,initial-scale=1,viewport-fit=cover">
+
+<title>QR Scanner</title>
+
+<link rel="stylesheet" href="scanner.css">
+
+<script src="jsQR.min.js"></script>
+
+</head>
+
+<body>
+
+<div id="loading">
+
+    <div class="spinner"></div>
+
+    <div class="text">
+        กำลังเปิดกล้อง...
+    </div>
+
+</div>
+
+
+<video
+    id="video"
+    playsinline
+    autoplay
+    muted>
+</video>
+
+
+<div id="overlay">
+
+    <div id="scanFrame">
+
+        <div class="corner tl"></div>
+        <div class="corner tr"></div>
+        <div class="corner bl"></div>
+        <div class="corner br"></div>
+
+        <div id="scanLine"></div>
+
+    </div>
+
+</div>
+
+
+<div id="message">
+
+    เล็ง QR Code ให้อยู่ในกรอบ
+
+</div>
+
+
+<div id="toolbar">
+
+    <button id="flashBtn">
+
+        🔦
+
+    </button>
+
+    <button id="switchBtn">
+
+        🔄
+
+    </button>
+
+    <button id="closeBtn">
+
+        ✕
+
+    </button>
+
+</div>
+
+
+<canvas id="canvas" hidden></canvas>
+
+
+<script>
+
+const SESSION =
+    new URLSearchParams(location.search)
+    .get("session") || "";
+
+</script>
+
+<script src="scanner.js"></script>
+
+</body>
+</html>
+
