@@ -252,29 +252,26 @@ closeBtn.onclick = function () {
 
 };
 
+
 // ----------------------------
 // ส่งผลกลับ Apps Script
 // ----------------------------
 function sendResult(text) {
 
-    console.log("SEND TO APPS SCRIPT:", text);
-
-    if (window.opener) {
-
-        console.log("window.opener OK");
+    if (window.opener && !window.opener.closed) {
 
         window.opener.postMessage({
             type: "QR_RESULT",
+            session: SESSION,
             text: text
         }, "*");
 
-    } else {
-
-        console.log("window.opener = NULL");
-
     }
 
-    window.close();
+    setTimeout(() => {
+        window.close();
+    }, 150);
+
 }
 
 
