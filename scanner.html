@@ -12,6 +12,7 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.js"></script>
 
+
 </head>
 
 <body>
@@ -19,12 +20,6 @@
 <div id="loading">
 
     <div class="spinner"></div>
-  <div id="debug"
-     style="position:fixed;bottom:10px;left:10px;right:10px;
-            background:#000;color:#0f0;
-            padding:8px;font-size:12px;
-            z-index:9999;word-break:break-all;">
-</div>
 
     <div class="text">
         กำลังเปิดกล้อง...
@@ -89,19 +84,6 @@
 
 <canvas id="canvas" hidden></canvas>
 
-<div id="debug"
-     style="position:fixed;
-            bottom:10px;
-            left:10px;
-            right:10px;
-            background:#000;
-            color:#0f0;
-            padding:8px;
-            font-size:12px;
-            z-index:9999;
-            word-break:break-all;
-            font-family:monospace;">
-</div>
 
 <script>
 
@@ -109,21 +91,11 @@ const SESSION =
     new URLSearchParams(location.search)
     .get("session") || "";
 
-window.addEventListener("load", () => {
-
-    document.getElementById("debug").innerHTML =
-        "<b>SESSION</b><br>" +
-        (SESSION || "(ว่าง)") +
-        "<br><br>" +
-        "<b>URL</b><br>" +
-        location.href;
-
-});
-
 </script>
 
 <script src="scanner.js"></script>
 
 </body>
 </html>
+
 
