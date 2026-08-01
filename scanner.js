@@ -13,6 +13,9 @@ const flashBtn = document.getElementById("flashBtn");
 const switchBtn = document.getElementById("switchBtn");
 const closeBtn = document.getElementById("closeBtn");
 
+const imageBtn = document.getElementById("imageBtn");
+const qrFile = document.getElementById("qrFile");
+
 let stream = null;
 let detector = null;
 let useNative = false;
@@ -273,6 +276,84 @@ function sendResult(text) {
     }, 150);
 
 }
+
+
+// ----------------------------
+// Scan QR from Image
+// ----------------------------
+
+imageBtn.onclick = function(){
+
+    qrFile.click();
+
+};
+
+
+qrFile.onchange = function(e){
+
+    const file = e.target.files[0];
+
+    if(!file)
+        return;
+
+
+    const img = new Image();
+
+
+    img.onload = function(){
+
+        canvas.width = img.width;
+        canvas.height = img.height;
+
+
+        ctx.drawImage(
+            img,
+            0,
+            0,
+            canvas.width,
+            canvas.height
+        );
+
+
+        const imageData =
+            ctx.getImageData(
+                0,
+                0,
+                canvas.width,
+                canvas.height
+            );
+
+
+        const qr =
+            jsQR(
+                imageData.data,
+                imageData.width,
+                imageData.height
+            );
+
+
+        if(qr && qr.data){
+
+            finish(qr.data);
+
+        }
+        else{
+
+            message.innerHTML =
+            "ไม่พบ QR Code ในรูป";
+
+        }
+
+
+    };
+
+
+    img.src =
+    URL.createObjectURL(file);
+
+};
+
+
 
 // ----------------------------
 // สลับกล้อง
