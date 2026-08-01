@@ -257,21 +257,26 @@ closeBtn.onclick = function () {
 // ----------------------------
 function sendResult(text) {
 
-    if (window.opener && !window.opener.closed) {
+    console.log("SEND TO APPS SCRIPT:", text);
+
+    if (window.opener) {
+
+        console.log("window.opener OK");
 
         window.opener.postMessage({
             type: "QR_RESULT",
-            session: SESSION,
             text: text
         }, "*");
 
+    } else {
+
+        console.log("window.opener = NULL");
+
     }
 
-    setTimeout(() => {
-        window.close();
-    }, 150);
-
+    window.close();
 }
+
 
 // ----------------------------
 // สลับกล้อง
