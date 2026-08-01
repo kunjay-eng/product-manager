@@ -255,16 +255,13 @@ closeBtn.onclick = function () {
 // ----------------------------
 // ส่งผลกลับ Apps Script
 // ----------------------------
+
+// ----------------------------
+// ส่งผลกลับ Apps Script
+// ----------------------------
 function sendResult(text) {
 
-    debug("sendResult() ถูกเรียก");
-    debug("TEXT = " + text);
-    debug("SESSION = " + SESSION);
-    debug("window.opener = " + !!window.opener);
-
     if (window.opener && !window.opener.closed) {
-
-        debug("กำลัง postMessage");
 
         window.opener.postMessage({
             type: "QR_RESULT",
@@ -272,15 +269,12 @@ function sendResult(text) {
             text: text
         }, "*");
 
-        debug("postMessage ส่งแล้ว");
-
-    } else {
-
-        debug("window.opener ไม่มี");
-
     }
 
-    // ยังไม่ต้องปิดหน้าต่าง
+ //   setTimeout(() => {
+      //  window.close();
+ //   }, 150);
+
 }
 
 
