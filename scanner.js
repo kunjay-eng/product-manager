@@ -232,9 +232,8 @@ function finish(text) {
     // สั่น 80ms
     if (navigator.vibrate)
         navigator.vibrate(80);
-
-    stopCamera();
-    toast("ได้รับ QR: " + data.text);
+    
+    stopCamera();   
     sendResult(text);
 
 }
