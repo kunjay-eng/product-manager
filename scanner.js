@@ -234,7 +234,7 @@ function finish(text) {
         navigator.vibrate(80);
 
     stopCamera();
-
+    toast("ได้รับ QR: " + data.text);
     sendResult(text);
 
 }
