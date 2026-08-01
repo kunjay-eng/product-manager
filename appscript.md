@@ -1974,6 +1974,7 @@ function getDashboardData(year, month){
   <meta charset="utf-8">
   <?!= include('Stylesheet'); ?>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.js"></script>
  
   
 </head>
