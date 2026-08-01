@@ -1,0 +1,238 @@
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    -webkit-tap-highlight-color:transparent;
+}
+
+html,
+body{
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    background:#000;
+    font-family:Arial,sans-serif;
+}
+
+video{
+    position:fixed;
+    inset:0;
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    background:#000;
+}
+
+#overlay{
+    position:fixed;
+    inset:0;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    pointer-events:none;
+}
+
+#scanFrame{
+
+    width:min(78vw,320px);
+    height:min(78vw,320px);
+
+    position:relative;
+
+    border-radius:22px;
+
+    box-shadow:
+        0 0 0 9999px rgba(0,0,0,.55);
+
+}
+
+.corner{
+
+    position:absolute;
+
+    width:40px;
+    height:40px;
+
+    border:5px solid #ff7a00;
+
+}
+
+.tl{
+    top:0;
+    left:0;
+    border-right:none;
+    border-bottom:none;
+    border-radius:18px 0 0 0;
+}
+
+.tr{
+    top:0;
+    right:0;
+    border-left:none;
+    border-bottom:none;
+    border-radius:0 18px 0 0;
+}
+
+.bl{
+    bottom:0;
+    left:0;
+    border-right:none;
+    border-top:none;
+    border-radius:0 0 0 18px;
+}
+
+.br{
+    bottom:0;
+    right:0;
+    border-left:none;
+    border-top:none;
+    border-radius:0 0 18px 0;
+}
+
+#scanLine{
+
+    position:absolute;
+
+    left:10px;
+    right:10px;
+
+    height:3px;
+
+    background:#00ff80;
+
+    border-radius:10px;
+
+    animation:scan 2s linear infinite;
+
+}
+
+@keyframes scan{
+
+    0%{
+
+        top:10px;
+
+    }
+
+    50%{
+
+        top:calc(100% - 13px);
+
+    }
+
+    100%{
+
+        top:10px;
+
+    }
+
+}
+
+#message{
+
+    position:fixed;
+
+    top:35px;
+
+    width:100%;
+
+    text-align:center;
+
+    color:#fff;
+
+    font-size:18px;
+
+    font-weight:bold;
+
+    text-shadow:0 2px 6px #000;
+
+}
+
+#toolbar{
+
+    position:fixed;
+
+    bottom:35px;
+
+    width:100%;
+
+    display:flex;
+
+    justify-content:center;
+
+    gap:16px;
+
+}
+
+#toolbar button{
+
+    width:58px;
+    height:58px;
+
+    border:none;
+
+    border-radius:50%;
+
+    background:rgba(255,255,255,.92);
+
+    font-size:24px;
+
+    cursor:pointer;
+
+}
+
+#loading{
+
+    position:fixed;
+
+    inset:0;
+
+    background:#000;
+
+    display:flex;
+
+    flex-direction:column;
+
+    justify-content:center;
+
+    align-items:center;
+
+    z-index:100;
+
+}
+
+.spinner{
+
+    width:54px;
+    height:54px;
+
+    border-radius:50%;
+
+    border:5px solid rgba(255,255,255,.25);
+
+    border-top-color:#ff7a00;
+
+    animation:spin .8s linear infinite;
+
+}
+
+@keyframes spin{
+
+    to{
+
+        transform:rotate(360deg);
+
+    }
+
+}
+
+.text{
+
+    margin-top:20px;
+
+    color:white;
+
+    font-size:18px;
+
+}
+
