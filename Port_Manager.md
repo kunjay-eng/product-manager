@@ -3838,6 +3838,69 @@ function _loadStockDetailRS(ticker, market) {
     .getRelativeStrengthData(ticker, market);
 }
 
+
+// helper function fee
+function _feeStatHtml(label, nativeVal, thbVal, cur, valStyle) {
+  const showThb = cur !== '฿'; // หุ้นไทยอยู่แล้วไม่ต้องซ้ำ
+  return `<div class="an-stat">
+    <span class="an-stat-lbl">${label}</span>
+    <span class="an-stat-val"${valStyle ? ` style="${valStyle}"` : ''}>${fmtNum(nativeVal, cur, '', 2)}</span>
+    ${showThb ? `<span style="display:block;font-size:10px;color:var(--muted);margin-top:1px">${fmtNum(thbVal, '฿', '', 2)}</span>` : ''}
+  </div>`;
+}
+
+// fee
+function _renderFeeCard(fc, cur) {
+  if (!fc || !fc.success) {
+    return `<div class="an-card"><div class="an-section-lbl">💸 Fee ซื้อ-ขาย</div>
+    <div class="empty-msg" style="padding:16px 4px;font-size:13px">${(fc&&fc.error)||'โหลดข้อมูล fee ไม่สำเร็จ'}</div></div>`;
+  }
+  if (!fc.hasData) {
+    return `<div class="an-card"><div class="an-section-lbl">💸 Fee ซื้อ-ขาย</div>
+    <div class="empty-msg" style="padding:16px 4px;font-size:13px">ยังไม่มีประวัติซื้อ-ขายในระบบ</div></div>`;
+  }
+
+  const otBadge = fc.overTrading
+    ? `<span class="badge ${fc.overTrading==='high'?'stop':'warn'} badge-block" style="margin-top:8px">⚠️ เทรดถี่ (${fc.buyCount+fc.sellCount} ออเดอร์) — ค่าธรรมเนียมอาจกัดกำไร</span>`
+    : '';
+
+  const breakevenHtml = fc.breakevenPrice !== null
+    ? `<div class="an-stat"><span class="an-stat-lbl">ราคาคุ้มทุน</span><span class="an-stat-val">${fmtNum(fc.breakevenPrice, cur, '', 2)}</span><span style="display:block;font-size:11px;color:var(--muted);margin-top:1px">${fc.breakevenIncludesSellFee ? ' (รวม ซื้อ+ขาย)' : ' (รวมเฉพาะ ซื้อ)'}</span></div>`
+    : '';
+
+  const cycleThbSuffix = cur !== '฿' ? ` <span style="color:var(--muted);font-size:10px">(≈${fmtNum(fc.avgFeePerCycleTHB,'฿','',2)})</span>` : '';
+
+  const feeVsProfitHtml = `
+    ${fc.feeVsUnrealizedProfitPct !== null
+      ? `<div class="empty-msg" style="text-align:left;padding:8px 0 0;font-size:11.5px">📊 Fee ส่วนที่ยังถืออยู่ = ${fc.feeVsUnrealizedProfitPct.toFixed(1)}% ของกำไรที่ยังไม่รับรู้ (unrealized)</div>` : ''}
+    ${fc.feeVsRealizedProfitPct !== null
+      ? `<div class="empty-msg" style="text-align:left;padding:2px 0 0;font-size:11.5px">📊 Fee ส่วนที่ขายไปแล้ว = ${fc.feeVsRealizedProfitPct.toFixed(1)}% ของกำไรที่รับรู้แล้ว (realized)</div>` : ''}
+  `;
+
+  const sellFeeNoteHtml = fc.sellFeeRatePct !== null
+    ? `<div class="empty-msg" style="text-align:left;padding:4px 0 0;font-size:10.5px;color:var(--muted)">ประมาณ fee ขายที่ ${fc.sellFeeRatePct.toFixed(2)}% ของมูลค่าขาย (อ้างอิงจาก${fc.sellFeeRateSource})</div>`
+    : `<div class="empty-msg" style="text-align:left;padding:4px 0 0;font-size:10.5px;color:var(--muted)">⚠️ ยังไม่มีประวัติขายในระบบเลย — ราคาคุ้มทุนนี้ยังไม่รวม fee ตอนขาย</div>`;
+
+  return `<div class="an-card">
+  <div class="an-section-lbl">💸 Fee ซื้อ-ขาย (รวมทุกรอบ)</div>
+  <div class="an-stat-grid cols-3">
+    <div class="an-stat"><span class="an-stat-lbl">รอบซื้อ-ขาย</span><span class="an-stat-val">${fc.cycles} รอบ</span></div>
+    ${_feeStatHtml('ซื้อรอบปัจจุบัน', fc.currentCycleBuyFeeNative, fc.currentCycleBuyFeeTHB, cur)}
+    ${_feeStatHtml('ซื้อทั้งหมด', fc.totalBuyFeeNative, fc.totalBuyFeeTHB, cur)}
+    ${_feeStatHtml('ขายทั้งหมด', fc.totalSellFeeNative, fc.totalSellFeeTHB, cur)}
+    ${_feeStatHtml('รวมซื้อ-ขาย', fc.totalFeeNative, fc.totalFeeTHB, cur, 'color:var(--stop)')}
+    ${_feeStatHtml('เฉลี่ย/ออเดอร์', fc.avgFeePerOrderNative, fc.avgFeePerOrderTHB, cur)}
+    ${breakevenHtml}
+  </div>
+  <div class="empty-msg" style="text-align:left;padding:8px 0 0;font-size:11.5px">📌 Fee เฉลี่ยต่อรอบ: ${fmtNum(fc.avgFeePerCycleNative, cur, '', 2)}${cycleThbSuffix} (${fc.buyCount} ซื้อ / ${fc.sellCount} ขาย)</div>
+  ${feeVsProfitHtml}
+  ${sellFeeNoteHtml}
+  ${otBadge}
+</div>`;
+}
+
+
+
 function _renderRSCard(rs, ticker, market) {
   if (!rs || !rs.available) {
     return `<div class="an-card">
@@ -4194,7 +4257,15 @@ ${_buildPositionSummaryHTML(d.ticker, d.market, cur)}
     <div class="an-stat"><span class="an-stat-lbl">Hard Stop</span><span class="an-stat-val">${fmtNum(d.tradePlan.hardStop, cur, '', 2)}</span></div>
   </div>
   ${!trailingActive ? `<div class="empty-msg" style="text-align:left;padding:8px 0 0;font-size:11.5px">💡 Trailing Stop จะเริ่มทำงานเมื่อกำไรถึงระดับที่ตั้งไว้ ตอนนี้ยังใช้ Hard Stop เป็นเกณฑ์หลัก</div>` : ''}
+
+
+
+
+</div>
  
+${_renderFeeCard(d.feeCard, cur)}
+
+
  
  <button class="wbtn ghost" style="width:100%; height:40px; margin-top:12px"
   onclick="openAvgCostCalculator('${d.ticker}', ${d.tradePlan.entry || 0}, ${d.tradePlan.shares || 0}, '${cur}', ${d.riskManagement.currentPrice || 0})">
@@ -4207,12 +4278,16 @@ ${_buildPositionSummaryHTML(d.ticker, d.market, cur)}
      📜 ประวัติการซื้อ-ขาย</button>
 
 
-</div>
+
+<button class="wbtn ghost" id="sd-backfill-btn" style="width:100%; height:40px; margin-top:12px" onclick="backfillAndRefreshStockLevels()">📥 ดึงราคาย้อนหลัง 6 เดือน (สำหรับแนวรับ/แนวต้าน)</button>
 
 
-<button class="wbtn ghost" id="sd-backfill-btn" style="width:100%; height:48px; margin-bottom:14px" onclick="backfillAndRefreshStockLevels()">📥 ดึงราคาย้อนหลัง 6 เดือน (สำหรับแนวรับ/แนวต้าน)</button>
+
 <div id="sd-support-card">${_renderSupportCard(d.support, cur, 'Stop Loss', d.tradePlan.hardStop, 'Hard Stop')}</div>
 <div id="sd-resistance-card">${_renderResistanceCard(d.resistance, cur, 'TakeProfit', d.tradePlan.takeProfit, 'Take Profit')}</div>
+
+
+
 
 <div class="an-card">
   <div class="an-section-lbl">📐 ATR & MOS (ประมาณการ)</div>
@@ -4363,26 +4438,46 @@ function _renderPortfolioDetail(d) {
 
 
 <div class="an-card">
+
+
   <div class="an-section-lbl">💰 Position Summary</div>
   <div class="an-stat-grid">
+    
     <div class="an-stat"><span class="an-stat-lbl">Average Cost</span><span class="an-stat-val">${fmtNum(d.positionSummary.avgCost, cur, '', 2)}</span></div>
+    
     <div class="an-stat"><span class="an-stat-lbl">Current Price</span><span class="an-stat-val">${fmtNum(d.positionSummary.currentPrice, cur, '', 2)}</span></div>
+    
     <div class="an-stat"><span class="an-stat-lbl">Return</span><span class="an-stat-val" style="color:${d.positionSummary.returnPct >= 0 ? 'var(--safe)' : 'var(--stop)'}">${d.positionSummary.returnPct >= 0 ? '+' : ''}${d.positionSummary.returnPct.toFixed(2)}%</span></div>
-    <div class="an-stat"><span class="an-stat-lbl">Profit</span><span class="an-stat-val" style="color:${d.positionSummary.unrealizedPL >= 0 ? 'var(--safe)' : 'var(--stop)'}">${fmtNum(d.positionSummary.unrealizedPL, cur, '', 2)}</span></div>
+    
+    <div class="an-stat"><span class="an-stat-lbl">Profit</span><span class="an-stat-val" style="color:${d.positionSummary.unrealizedPL >= 0 ? 'var(--safe)' : 'var(--stop)'}">${fmtNum(d.positionSummary.unrealizedPL, cur, '', 2)}</span>
+    </div>
+  
+  </div>
   </div>
 
-<div class="cta-row">
-  <button class="wbtn ghost" style="width:100%; height:40px; margin-top:12px" onclick="openAvgCostCalculator('${d.ticker}', ${d.positionSummary.avgCost || 0}, ${d.holdingInfo.shares || 0}, '${cur}', ${d.positionSummary.currentPrice || 0})">🧮 คำนวณต้นทุนเฉลี่ยใหม่</button>
-  <button class="wbtn ghost" style="width:100%; height:40px; margin-top:12px" onclick="openTickerDetail('${d.ticker}', '${cur === '$' ? 'US' : 'TH'}')">📜 ประวัติการซื้อ-ขาย</button>
-
-  <button class="wbtn ghost" style="width:100%; height:40px; margin-top:12px" onclick="openSellCalculator('${d.ticker}','${d.market}')">💰 คำนวณการขายหุ้นนี้</button>
-</div>
+${_renderFeeCard(d.feeCard, cur)}
 
 ${allocBar}
 
-<button class="wbtn ghost" id="sd-backfill-btn" style="width:100%; height:48px; margin-bottom:14px" onclick="backfillAndRefreshStockLevels()">📥 ดึงราคาย้อนหลัง 6 เดือน (สำหรับแนวรับ/แนวต้าน)</button>
+
+  
+
+
+
+  <button class="wbtn ghost" style="width:100%; height:40px; margin-top:12px" onclick="openAvgCostCalculator('${d.ticker}', ${d.positionSummary.avgCost || 0}, ${d.holdingInfo.shares || 0}, '${cur}', ${d.positionSummary.currentPrice || 0})">🧮 คำนวณต้นทุนเฉลี่ยใหม่</button>
+
+  <button class="wbtn ghost" style="width:100%; height:40px; margin-top:12px" onclick="openTickerDetail('${d.ticker}', '${cur === '$' ? 'US' : 'TH'}')">📜 ประวัติการซื้อ-ขาย</button>
+
+  <button class="wbtn ghost" style="width:100%; height:40px; margin-top:12px" onclick="openSellCalculator('${d.ticker}','${d.market}')">💰 คำนวณการขายหุ้นนี้</button>
+
+
+
+<button class="wbtn ghost" id="sd-backfill-btn" style="width:100%; height:40px; margin-top:12px" onclick="backfillAndRefreshStockLevels()">📥 ดึงราคาย้อนหลัง 6 เดือน (สำหรับแนวรับ/แนวต้าน)</button>
 <div id="sd-support-card">${_renderSupportCard(d.support, cur, 'BuyZone')}</div>
 <div id="sd-resistance-card">${_renderResistanceCard(d.resistance, cur, 'TakeProfitZone')}</div>
+
+
+
 
 
 <button class="wbtn ghost" style="width:100%; height:48px; margin:0 0 14px" onclick="openPositionSizeCalcForStockDetail()">🧮 Position Sizing Calculator</button>
@@ -8337,6 +8432,11 @@ window.addEventListener('DOMContentLoaded',()=>{
 </script>
 </body>
 </html>
+
+
+
+
+
 
 
 ## alert_log.gs
@@ -18808,12 +18908,15 @@ function _buildFastDetailData(ticker, market, cfg) {
   const riskLabel = sig.riskStars >= 4 ? 'Low' : (sig.riskStars === 3 ? 'Medium' : 'High');
   const riskClass = sig.riskStars >= 4 ? 'safe' : (sig.riskStars === 3 ? 'warn' : 'stop');
 
+  const realized = _getRealizedPnLForTicker(ticker, sig.isTH ? 'TH' : 'US'); // ← เพิ่มบรรทัดนี้ ก่อน return
+
   // ── Technical Checklist — พื้นฐานที่มีอยู่แล้วเสมอ (EMA5/20, RSI, ราคา>EMA20) ──
   const checklist = [
     { ok: sig.ema5 > sig.ema20, label: 'EMA5 > EMA20 (แนวโน้มระยะสั้น)' },
     { ok: sig.rsi >= 50 && sig.rsi <= 70, label: 'RSI ' + sig.rsi.toFixed(1) + ' อยู่ในโซนแข็งแรง (50-70)', warn: sig.rsi > 70 },
     { ok: sig.price >= sig.ema20, label: 'ราคา > EMA20' }
   ];
+
 
   // ── ต่อ EMA50/MACD จาก Daily_Close_Log (ไฟล์ภายนอก) ถ้ามีข้อมูลพอ — ไม่มีก็ไม่ใส่ ไม่เดา ──
   let checklistCaption = 'ระบบ Fast Trade ปัจจุบันคำนวณจาก EMA5/EMA20 + RSI + Volume — ยังไม่รวม MACD และ EMA50';
@@ -18849,7 +18952,11 @@ function _buildFastDetailData(ticker, market, cfg) {
       price: sig.price, plPct: sig.plPct, action,
       actionLabel: { buy: 'BUY', watch: 'WATCH', sell: 'SELL' }[action],
       strategy: '⚡ Fast Trade'
+      
     },
+
+   
+
     tradePlan: {
       entry: sig.buyPrice,       // ราคาที่เข้าซื้อจริง (ถืออยู่แล้ว ไม่ใช่ราคาที่วางแผนจะเข้าใหม่)
       entryIsActual: true,       // ใช้บอก frontend ว่าเลขนี้คือ "ซื้อแล้ว" ไม่ใช่ "แผนในอนาคต"
@@ -18878,6 +18985,15 @@ function _buildFastDetailData(ticker, market, cfg) {
       reasons: sig.reasonsFor, warnings: sig.reasonsAgainst,
       actions: sig.actionPlan ? [sig.actionPlan.action] : _defaultFastActions(sig.decision)
     },
+  
+  feeCard: _attachFeeInsights(
+  getStockFeeCard(ticker, market),
+  sig.buyPrice, sig.shares,
+  (sig.price - sig.buyPrice) * sig.shares,        // unrealized
+  realized.found ? realized.netPL : 0             // realized
+),
+
+
     updatedAt: sig.updatedAt
   };
 }
@@ -18954,6 +19070,9 @@ function _buildPortfolioDetailData(ticker, market, cfg) {
       targetWeightPct: weightInfo ? weightInfo.targetWeightPct : null,
       isEstimatedWeight: weightInfo ? weightInfo.isEstimated : null
     },
+
+   
+
     positionSummary: {
       avgCost: holding.avgCost, currentPrice: holding.priceNow,
       returnPct: holding.unrealizedPct * 100, unrealizedPL: holding.unrealizedPL
@@ -18978,6 +19097,13 @@ function _buildPortfolioDetailData(ticker, market, cfg) {
     support: _getSupportSafe(ticker), // Swing Low เดียวกับสาย Fast — แต่ตีความเป็น "โซนรอซื้อเพิ่ม" แทน Stop Loss
     resistance: _getResistanceSafe(ticker), // Swing High/ATH — ตีความเป็น "โซนอาจพิจารณาขายทำกำไรบางส่วน"
     recommendation: _buildPortfolioRecommendation(decision, weightInfo, holding),
+  feeCard: _attachFeeInsights(
+  getStockFeeCard(ticker, market),
+  holding.avgCost, holding.sharesRemain,
+  holding.unrealizedPL,                            // unrealized
+  realized.found ? realized.netPL : 0              // realized
+),
+
     updatedAt: Utilities.formatDate(new Date(), 'Asia/Bangkok', 'dd/MM/yyyy HH:mm')
   };
 }
@@ -19109,6 +19235,7 @@ function _getRealizedPnLForTicker(ticker, market) {
     return { found: false };
   }
 }
+
 
 
 
@@ -22794,13 +22921,18 @@ function _readFeeRows(sheetName, market) {
     else dateStr = String(dateVal || '').substring(0, 10);
     if (!dateStr) return;
 
-    rows.push({
-      ticker: ticker, market: market, type: type, shares: shares, dateStr: dateStr,
-      commissionTHB: commission * exchangeRate,
-      otherTHB: other * exchangeRate,
-      vatTHB: vat * exchangeRate,
-      feeTHB: (commission + other + vat) * exchangeRate
-    });
+ rows.push({
+  ticker: ticker, market: market, type: type, shares: shares, dateStr: dateStr,
+  price: parseFloat(r[5]) || 0,                       // ← เพิ่ม: col F ราคาต่อหุ้น
+  commissionTHB: commission * exchangeRate,
+  otherTHB: other * exchangeRate,
+  vatTHB: vat * exchangeRate,
+  feeTHB: (commission + other + vat) * exchangeRate,
+  feeNative: commission + other + vat,
+  tradeValueNative: (parseFloat(r[5]) || 0) * shares   // ← เพิ่ม: มูลค่ารายการ (สกุลเงินต้นทาง)
+});
+
+
   });
   return rows;
 }
@@ -22831,6 +22963,134 @@ function _getRealizedProfitByMarket(market) {
     return 0;
   }
 }
+
+
+/** สรุป fee ของหุ้นตัวเดียว (รวมทุกรอบ _C1, _C2...) — ใช้ในการ์ด Fee หน้า Stock Detail */
+function getStockFeeCard(ticker, market) {
+  try {
+    const baseTicker = String(ticker || '').trim().toUpperCase();
+    const sheetName = market === 'TH' ? SHEETS.TH_TRANS : SHEETS.US_TRANS;
+    const allRows = _readFeeRows(sheetName, market); // ← เปลี่ยนจาก rows ตรงๆ เป็นทั้งตลาดก่อน
+    const rows = allRows.filter(r => _stripCycleSuffix(r.ticker).toUpperCase() === baseTicker);
+
+    //  .filter(r => _stripCycleSuffix(r.ticker).toUpperCase() === baseTicker);
+
+    if (!rows.length) {
+      return { success: true, hasData: false, cycles: 0,totalBuyShares: 0,avgFeePerOrderNative: 0, avgFeePerCycleNative: 0,
+        currentCycleBuyFeeTHB: 0, totalBuyFeeTHB: 0, totalSellFeeTHB: 0, totalFeeTHB: 0,
+        currentCycleBuyFeeNative: 0, totalBuyFeeNative: 0, totalSellFeeNative: 0, totalFeeNative: 0,
+        avgFeePerOrderTHB: 0, avgFeePerCycleTHB: 0, buyCount: 0, sellCount: 0, overTrading: null };
+    }
+
+    const cycleOrder = r => { const m = String(r.ticker).match(/_C(\d+)$/i); return m ? parseInt(m[1],10) : 0; };
+    const cycles = [...new Set(rows.map(r => r.ticker.toUpperCase()))];
+    const latestCycleTicker = rows.reduce((a,b) => cycleOrder(b) > cycleOrder(a) ? b : a, rows[0]).ticker.toUpperCase();
+
+    let totalBuy=0, totalSell=0, buyCount=0, sellCount=0, currentCycleBuy=0;
+    let totalBuyN=0, totalSellN=0, currentCycleBuyN=0;
+    let totalBuyShares = 0;
+    rows.forEach(r => {
+      if (r.type === 'ซื้อ') {
+  totalBuy += r.feeTHB; totalBuyN += r.feeNative; totalBuyShares += r.shares; buyCount++;
+      if (r.ticker.toUpperCase() === latestCycleTicker) { currentCycleBuy += r.feeTHB; currentCycleBuyN += r.feeNative; }
+     }else if (r.type === 'ขาย') {
+        totalSell += r.feeTHB; totalSellN += r.feeNative; sellCount++;
+      }
+    });
+
+    const totalFee = totalBuy + totalSell;
+    const totalFeeN = totalBuyN + totalSellN;
+    const totalOrders = buyCount + sellCount;
+
+    const ORDER_THRESHOLD = 15; // ใช้ threshold เดียวกับหน้า Fee Analysis ภาพรวม
+    const overTrading = totalOrders >= ORDER_THRESHOLD ? (totalOrders >= ORDER_THRESHOLD*2 ? 'high' : 'warn') : null;
+
+    const sellFeeEst = _estimateSellFeeRate(rows, allRows);
+
+
+    return {
+      success: true, hasData: true, cycles: cycles.length,
+      currentCycleBuyFeeTHB: Math.round(currentCycleBuy*100)/100,
+      totalBuyFeeTHB: Math.round(totalBuy*100)/100,
+      totalSellFeeTHB: Math.round(totalSell*100)/100,
+      totalFeeTHB: Math.round(totalFee*100)/100,
+      currentCycleBuyFeeNative: Math.round(currentCycleBuyN*100)/100,
+      totalBuyFeeNative: Math.round(totalBuyN*100)/100,
+      totalSellFeeNative: Math.round(totalSellN*100)/100,
+      totalFeeNative: Math.round(totalFeeN*100)/100,
+      avgFeePerOrderTHB: totalOrders>0 ? Math.round((totalFee/totalOrders)*100)/100 : 0,
+      avgFeePerCycleTHB: cycles.length>0 ? Math.round((totalFee/cycles.length)*100)/100 : 0,
+      sellFeeRatePct: sellFeeEst ? Math.round(sellFeeEst.rate * 10000) / 100 : null,
+      sellFeeRateSource: sellFeeEst ? sellFeeEst.source : null,
+      totalBuyShares: Math.round(totalBuyShares * 10000) / 10000,
+      avgFeePerOrderNative: totalOrders > 0 ? Math.round((totalFeeN / totalOrders) * 100) / 100 : 0,
+      avgFeePerCycleNative: cycles.length > 0 ? Math.round((totalFeeN / cycles.length) * 100) / 100 : 0,
+      buyCount, sellCount, overTrading
+
+
+    };
+  } catch (e) {
+    logError('getStockFeeCard', e);
+    return { success: false, error: e.message };
+  }
+}
+
+/** เติม breakeven price + fee vs profit % — เรียกหลัง getStockFeeCard() เมื่อรู้ต้นทุน/กำไรแล้ว */
+function _attachFeeInsights(feeCard, avgCostNative, sharesRemain, unrealizedProfitNative, realizedProfitNative) {
+  if (!feeCard || !feeCard.success || !feeCard.hasData) return feeCard;
+
+  const costBasis = (avgCostNative * (sharesRemain || 0)) + feeCard.totalBuyFeeNative;
+
+  if (sharesRemain > 0) {
+    if (feeCard.sellFeeRatePct !== null) {
+      const r = feeCard.sellFeeRatePct / 100;
+      feeCard.breakevenPrice = r < 1 ? Math.round((costBasis / (sharesRemain * (1 - r))) * 100) / 100 : null;
+      feeCard.breakevenIncludesSellFee = true;
+    } else {
+      feeCard.breakevenPrice = Math.round((costBasis / sharesRemain) * 100) / 100;
+      feeCard.breakevenIncludesSellFee = false;
+    }
+  } else {
+    feeCard.breakevenPrice = null;
+  }
+
+  // ── แบ่ง fee ซื้อตามสัดส่วนหุ้นที่ขายไปแล้ว vs ที่ยังถืออยู่ ──
+  const buyFeePerShare = feeCard.totalBuyShares > 0 ? feeCard.totalBuyFeeNative / feeCard.totalBuyShares : 0;
+  const unrealizedFeeNative = buyFeePerShare * (sharesRemain || 0);
+  const realizedFeeNative = feeCard.totalFeeNative - unrealizedFeeNative; // fee ซื้อส่วนที่ขายแล้ว + fee ขายทั้งหมด
+
+  feeCard.unrealizedFeeNative = Math.round(unrealizedFeeNative * 100) / 100;
+  feeCard.realizedFeeNative = Math.round(realizedFeeNative * 100) / 100;
+
+  feeCard.feeVsUnrealizedProfitPct = (unrealizedProfitNative !== null && unrealizedProfitNative > 0)
+    ? Math.round((unrealizedFeeNative / unrealizedProfitNative) * 10000) / 100 : null;
+
+  feeCard.feeVsRealizedProfitPct = (realizedProfitNative !== null && realizedProfitNative > 0)
+    ? Math.round((realizedFeeNative / realizedProfitNative) * 10000) / 100 : null;
+
+  return feeCard;
+}
+
+
+
+/** ประมาณ % fee ต่อมูลค่าขาย — ใช้ประวัติขายจริงของหุ้นตัวนี้ก่อน ถ้าไม่เคยขายเลยค่อย fallback เป็นค่าเฉลี่ยทั้งตลาด */
+function _estimateSellFeeRate(stockRows, marketRows) {
+  const ownSells = stockRows.filter(r => r.type === 'ขาย' && r.tradeValueNative > 0);
+  if (ownSells.length) {
+    const fee = ownSells.reduce((s,r) => s + r.feeNative, 0);
+    const val = ownSells.reduce((s,r) => s + r.tradeValueNative, 0);
+    return val > 0 ? { rate: fee/val, source: 'หุ้นตัวนี้เอง (' + ownSells.length + ' ครั้ง)' } : null;
+  }
+  const marketSells = marketRows.filter(r => r.type === 'ขาย' && r.tradeValueNative > 0);
+  if (marketSells.length) {
+    const fee = marketSells.reduce((s,r) => s + r.feeNative, 0);
+    const val = marketSells.reduce((s,r) => s + r.tradeValueNative, 0);
+    return val > 0 ? { rate: fee/val, source: 'ค่าเฉลี่ยทั้งตลาด (' + marketSells.length + ' ครั้ง)' } : null;
+  }
+  return null; // ไม่มีประวัติขายเลยทั้งระบบ
+}
+
+
 
 
 
