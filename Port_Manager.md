@@ -3850,7 +3850,7 @@ function _feeStatHtml(label, nativeVal, thbVal, cur, valStyle) {
 }
 
 // fee
-function _renderFeeCard(fc, cur) {
+function _renderFeeCard(fc, cur, currentPrice) {
   if (!fc || !fc.success) {
     return `<div class="an-card"><div class="an-section-lbl">💸 Fee ซื้อ-ขาย</div>
     <div class="empty-msg" style="padding:16px 4px;font-size:13px">${(fc&&fc.error)||'โหลดข้อมูล fee ไม่สำเร็จ'}</div></div>`;
@@ -3864,9 +3864,23 @@ function _renderFeeCard(fc, cur) {
     ? `<span class="badge ${fc.overTrading==='high'?'stop':'warn'} badge-block" style="margin-top:8px">⚠️ เทรดถี่ (${fc.buyCount+fc.sellCount} ออเดอร์) — ค่าธรรมเนียมอาจกัดกำไร</span>`
     : '';
 
+
+    const isCovered = fc.breakevenPrice !== null && currentPrice !== undefined && currentPrice >= fc.breakevenPrice;
   const breakevenHtml = fc.breakevenPrice !== null
-    ? `<div class="an-stat"><span class="an-stat-lbl">ราคาคุ้มทุน</span><span class="an-stat-val">${fmtNum(fc.breakevenPrice, cur, '', 2)}</span><span style="display:block;font-size:11px;color:var(--muted);margin-top:1px">${fc.breakevenIncludesSellFee ? ' (รวม ซื้อ+ขาย)' : ' (รวมเฉพาะ ซื้อ)'}</span></div>`
+    ? `<div class="an-stat">
+        <span class="an-stat-lbl">ราคาคุ้มทุน</span>
+        <span class="an-stat-val" style="color:${isCovered ? 'var(--safe)' : 'var(--stop)'}">${fmtNum(fc.breakevenPrice, cur, '', 2)}</span>
+        <span style="display:block;font-size:10px;color:var(--safe);margin-top:1px">${fc.breakevenIncludesSellFee ? ' (รวมซื้อ+ขาย) ' : ' (รวมเฉพาะซื้อ) '}
+
+        ${isCovered ? ` ✓ คุ้มทุนแล้ว</span>` : ''}
+     
+     
+     
+      </div>`
     : '';
+
+
+
 
   const cycleThbSuffix = cur !== '฿' ? ` <span style="color:var(--muted);font-size:10px">(≈${fmtNum(fc.avgFeePerCycleTHB,'฿','',2)})</span>` : '';
 
@@ -3880,6 +3894,11 @@ function _renderFeeCard(fc, cur) {
   const sellFeeNoteHtml = fc.sellFeeRatePct !== null
     ? `<div class="empty-msg" style="text-align:left;padding:4px 0 0;font-size:10.5px;color:var(--muted)">ประมาณ fee ขายที่ ${fc.sellFeeRatePct.toFixed(2)}% ของมูลค่าขาย (อ้างอิงจาก${fc.sellFeeRateSource})</div>`
     : `<div class="empty-msg" style="text-align:left;padding:4px 0 0;font-size:10.5px;color:var(--muted)">⚠️ ยังไม่มีประวัติขายในระบบเลย — ราคาคุ้มทุนนี้ยังไม่รวม fee ตอนขาย</div>`;
+
+
+  
+
+
 
   return `<div class="an-card">
   <div class="an-section-lbl">💸 Fee ซื้อ-ขาย (รวมทุกรอบ)</div>
@@ -4263,7 +4282,9 @@ ${_buildPositionSummaryHTML(d.ticker, d.market, cur)}
 
 </div>
  
-${_renderFeeCard(d.feeCard, cur)}
+${_renderFeeCard(d.feeCard, cur, d.hero.price)}
+
+
 
 
  
@@ -4455,7 +4476,7 @@ function _renderPortfolioDetail(d) {
   </div>
   </div>
 
-${_renderFeeCard(d.feeCard, cur)}
+${_renderFeeCard(d.feeCard, cur, d.positionSummary.currentPrice)}
 
 ${allocBar}
 
@@ -8432,12 +8453,6 @@ window.addEventListener('DOMContentLoaded',()=>{
 </script>
 </body>
 </html>
-
-
-
-
-
-
 
 ## alert_log.gs
 // ========================================
