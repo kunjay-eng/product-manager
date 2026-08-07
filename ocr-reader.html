@@ -293,7 +293,10 @@ function itemRowHtml(idx, item){
       <input type="text" id="riCategory-${idx}" placeholder="เช่น ขนม (กรอกเอง — AI ไม่เดาให้)">
 
       <label>กลุ่มสินค้า</label>
-      <input type="text" id="riGroup-${idx}" value="${esc(item.product_name)}">
+      <div style="display:flex; gap:6px;">
+        <input type="text" id="riGroup-${idx}" value="${esc(item.product_name)}" style="flex:1;">
+        <button type="button" class="copy-btn" data-target="riGroup-${idx}" style="flex-shrink:0; width:40px; border:1.5px solid var(--line); border-radius:10px; background:var(--card); cursor:pointer; font-size:14px;">📋</button>
+      </div>
 
       <label>ลิงค์สินค้า (ไม่บังคับ)</label>
       <input type="url" id="riUrl-${idx}" value="${esc(item.product_url)}" placeholder="เช่น ลิงก์ Shopee, Lazada">
@@ -344,6 +347,19 @@ function addItemRow(item){
   const row = div.firstElementChild;
   wrap.appendChild(row);
   row.querySelector('.rm-item').onclick = () => row.remove();
+  const copyBtn = row.querySelector('.copy-btn');
+  copyBtn.onclick = async () => {
+    const input = document.getElementById(copyBtn.dataset.target);
+    try{
+      await navigator.clipboard.writeText(input.value);
+      const old = copyBtn.textContent;
+      copyBtn.textContent = '✅';
+      setTimeout(() => { copyBtn.textContent = old; }, 1000);
+    } catch(e){
+      input.select();
+      document.execCommand('copy');
+    }
+  };
 }
 document.getElementById('addItemBtn').onclick = () => addItemRow({});
 
@@ -414,3 +430,4 @@ document.getElementById('confirmBtn').onclick = () => {
 </script>
 </body>
 </html>
+
