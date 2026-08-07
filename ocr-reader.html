@@ -190,27 +190,38 @@ document.getElementById('readBtn').onclick = async () => {
       parts.push({ inline_data: { mime_type: f.type || 'image/jpeg', data: b64 } });
     }
 
-    const model = 'gemini-2.5-flash';
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+    // ลองไล่ทีละโมเดล เผื่อบางโมเดลถูกปลดระวาง/ไม่เปิดให้คีย์นี้ใช้
+    // (ถ้า Google ออกรุ่นใหม่กว่านี้ในอนาคต แก้/เพิ่มชื่อโมเดลในลิสต์นี้ได้เลย)
+    const MODEL_CANDIDATES = ['gemini-flash-latest', 'gemini-3.6-flash', 'gemini-3.5-flash-lite', 'gemini-2.5-flash-lite'];
 
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
-      body: JSON.stringify({
-        contents: [{ role: 'user', parts }],
-        generationConfig: {
-          responseMimeType: 'application/json',
-          responseSchema: RESPONSE_SCHEMA
+    let data = null;
+    let lastErr = null;
+    for (const model of MODEL_CANDIDATES){
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+      try{
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+          body: JSON.stringify({
+            contents: [{ role: 'user', parts }],
+            generationConfig: {
+              responseMimeType: 'application/json',
+              responseSchema: RESPONSE_SCHEMA
+            }
+          })
+        });
+        if (!res.ok){
+          const errText = await res.text();
+          lastErr = new Error(`[${model}] API error ${res.status}: ${errText.slice(0,200)}`);
+          continue; // ลองโมเดลถัดไป
         }
-      })
-    });
-
-    if (!res.ok){
-      const errText = await res.text();
-      throw new Error(`API error ${res.status}: ${errText.slice(0,200)}`);
+        data = await res.json();
+        break;
+      } catch(e){
+        lastErr = e;
+      }
     }
-
-    const data = await res.json();
+    if (!data) throw lastErr || new Error('ไม่สามารถเรียกโมเดลใดได้เลย');
     const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
     if (!rawText) throw new Error('AI ไม่ได้ส่งข้อมูลกลับมา ลองใหม่อีกครั้ง');
 
@@ -303,3 +314,4 @@ document.getElementById('confirmBtn').onclick = () => {
 </script>
 </body>
 </html>
+
