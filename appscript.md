@@ -4601,9 +4601,13 @@ window.addEventListener("message", function (event) {
 });
 
 /**
- * data = { store_name, order_date, order_no, items:[{product_name, qty, total_price}] }
- * เติมข้อมูลลงในฟอร์ม "บันทึกการซื้อ" ที่เปิดอยู่ (renderAddPurchase)
- * ให้ผู้ใช้ตรวจสอบ/แก้หมวดสินค้าเอง แล้วค่อยกดปุ่ม "บันทึกการซื้อทั้งออเดอร์" ตามปกติ
+ * data = {
+ *   store_name, order_date, order_no, shipping, other_cost,
+ *   discounts: [{name, amount}],
+ *   items: [{category_name, product_name, product_url, qty, unit_buy, ratio, unit_sell, unit_price, total_price}]
+ * }
+ * เติมข้อมูลลงในฟอร์ม "บันทึกการซื้อ" ที่เปิดอยู่ (renderAddPurchase) แบบ 1:1 ทุกช่อง
+ * ยังไม่บันทึกลง Sheet — ผู้ใช้ต้องตรวจสอบแล้วกด "✔ บันทึกการซื้อทั้งออเดอร์" เองเหมือนเดิม
  */
 function handleOCRResult(data){
   if (!data || !document.getElementById('orderItemsList')) {
@@ -4611,39 +4615,69 @@ function handleOCRResult(data){
     return;
   }
 
-  // เติมข้อมูลหัวออเดอร์ ถ้า AI อ่านได้
+  // หัวออเดอร์
   if (data.store_name) document.getElementById('fStore').value = data.store_name;
   if (data.order_no)   document.getElementById('fOrderNo').value = data.order_no;
   if (data.order_date && /^\d{4}-\d{2}-\d{2}$/.test(data.order_date)) {
     document.getElementById('fDate').value = data.order_date;
   }
 
-  // ล้างรายการสินค้าว่างที่ auto-add ไว้ตอนเปิดหน้า (ถ้ายังไม่มีใครกรอกอะไร)
+  // ค่าขนส่ง / ค่าอื่นๆ
+  if (data.shipping)   document.getElementById('fShipping').value = data.shipping;
+  if (data.other_cost) document.getElementById('fOther').value = data.other_cost;
+
+  // ส่วนลด — เติมลงรายการส่วนลดที่มีอยู่แล้ว (ใช้ discountRowEl เดิมของระบบ)
+  if (Array.isArray(data.discounts) && data.discounts.length > 0){
+    const discList = document.getElementById('discountList');
+    data.discounts.forEach(d => {
+      if (d && Number(d.amount) > 0) discList.appendChild(discountRowEl(d.name || '', d.amount, 'amount'));
+    });
+  }
+
+  // ล้างรายการสินค้าว่างที่ auto-add ไว้ตอนเปิดหน้า โดย "ใช้ซ้ำ" แถวนั้นเป็นสินค้ารายการแรก
+  // (ห้ามลบทิ้งแล้วสร้างใหม่ เพราะ orderItemSeq เป็นตัวนับเดินหน้าอย่างเดียว ไม่ลดค่าเมื่อลบแถว
+  //  ถ้าลบแล้วสร้างใหม่ เลข "สินค้าที่ N" จะกระโดดเริ่มที่ 2 ทันที)
   const itemsList = document.getElementById('orderItemsList');
   const existingRows = Array.from(itemsList.querySelectorAll('.order-item'));
   const firstRowEmpty = existingRows.length === 1 &&
     !document.getElementById(`fGroup-${existingRows[0].dataset.idx}`).value.trim();
-  if (firstRowEmpty) existingRows[0].remove();
 
-  // เพิ่มรายการสินค้าที่ AI อ่านได้ ทีละแถว โดยใช้ createOrderItemRow/wireItemRow เดิม
-  (data.items || []).forEach(it => {
+  const ocrItems = data.items || [];
+  let usedFirstRow = false;
+
+  if (firstRowEmpty && ocrItems.length > 0){
+    fillItemFields(existingRows[0].dataset.idx, ocrItems[0]);
+    usedFirstRow = true;
+  }
+
+  // เพิ่มรายการสินค้าที่เหลือ ทีละแถว โดยใช้ createOrderItemRow/wireItemRow เดิม — เติมครบทุกช่อง
+  ocrItems.slice(usedFirstRow ? 1 : 0).forEach(it => {
     const { row, idx } = createOrderItemRow();
     itemsList.appendChild(row);
     wireItemRowGlobal(idx);
-
-    document.getElementById(`fGroup-${idx}`).value = it.product_name || '';
-    document.getElementById(`fQty-${idx}`).value = it.qty || 1;
-    document.getElementById(`fUnitBuy-${idx}`).value = 'ชิ้น';
-    document.getElementById(`fRatio-${idx}`).value = 1;
-    document.getElementById(`fUnitSell-${idx}`).value = 'ชิ้น';
-    document.getElementById(`fItemPrice-${idx}`).value = it.total_price || 0;
+    fillItemFields(idx, it);
   });
 
   if (itemsList.querySelectorAll('.order-item').length === 0) addItemRowGlobal();
 
-  toast(`เติมข้อมูลจาก AI แล้ว ${(data.items||[]).length} รายการ — กรุณาตรวจสอบหมวดสินค้า/ตัวเลขก่อนกดบันทึก`);
+  toast(`เติมข้อมูลจาก AI แล้ว ${ocrItems.length} รายการ — กรุณาเลือกหมวดสินค้าและตรวจสอบตัวเลขก่อนกดบันทึก`);
   if (typeof updateAllocPreview === 'function') updateAllocPreview();
 }
+
+function fillItemFields(idx, it){
+  // หมวดสินค้าหลัก: ตั้งใจเว้นว่างเสมอ ให้ผู้ใช้เลือก/พิมพ์เอง (autocomplete จะช่วยเดาจากชื่อสินค้าที่เคยบันทึกไว้)
+  document.getElementById(`fCategory-${idx}`).value = '';
+
+  document.getElementById(`fGroup-${idx}`).value = it.product_name || '';
+  document.getElementById(`fProductUrl-${idx}`).value = it.product_url || '';
+  document.getElementById(`fQty-${idx}`).value = it.qty || 1;
+  document.getElementById(`fUnitBuy-${idx}`).value = it.unit_buy || 'ชิ้น';
+  document.getElementById(`fRatio-${idx}`).value = it.ratio || 1;
+  document.getElementById(`fUnitSell-${idx}`).value = it.unit_sell || 'ชิ้น';
+  if (it.unit_price) document.getElementById(`fUnitPrice-${idx}`).value = it.unit_price;
+  document.getElementById(`fItemPrice-${idx}`).value = it.total_price || 0;
+}
+
 
 
 
