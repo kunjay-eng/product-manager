@@ -3538,8 +3538,13 @@ async function renderAddPurchase(){
       <div class="field"><label>เลขที่คำสั่งซื้อ</label><input id="fOrderNo" placeholder="PO-1001"></div>
     </div>
 
-    <div class="section-title">🛒 สินค้าในออเดอร์นี้</div>
-    <div id="orderItemsList"></div>
+    <button type="button" class="btn btn-ghost" id="ocrUploadBtn" style="margin-bottom:12px;">
+  📸 อัพโหลดรูปคำสั่งซื้อ ให้ AI อ่านให้อัตโนมัติ
+</button>
+
+<div class="section-title">🛒 สินค้าในออเดอร์นี้</div>
+<div id="orderItemsList"></div>
+
     <button type="button" class="btn btn-ghost" id="addItemBtn" style="margin-bottom:16px;">+ เพิ่มสินค้าอีกรายการ</button>
 
     <div class="section-title">💰 ค่าใช้จ่ายรวมทั้งออเดอร์ (หารตามสัดส่วนราคาสินค้าให้อัตโนมัติ)</div>
@@ -3604,6 +3609,7 @@ async function renderAddPurchase(){
   function wireItemRow(idx){
     setupAutocomplete(`fCategory-${idx}`, `listCategory-${idx}`, 'category', () => null);
     setupAutocomplete(`fGroup-${idx}`, `listGroup-${idx}`, 'productGroup', () => null);
+    
 
     // กรอกราคาต่อชิ้น + จำนวนซื้อ -> คำนวณราคารวมให้อัตโนมัติ (แก้ราคารวมเองทีหลังได้ ถ้าต้องการ override)
     function autoCalcTotal(){
@@ -3624,6 +3630,8 @@ async function renderAddPurchase(){
       updateAllocPreview();
     };
   }
+ 
+  window.wireItemRowGlobal = wireItemRow;   // ← เพิ่มบรรทัดนี้
 
 
   function addItemRow(){
@@ -3634,7 +3642,7 @@ async function renderAddPurchase(){
 
   document.getElementById('addItemBtn').onclick = addItemRow;
   addItemRow(); // เริ่มต้นด้วย 1 รายการเสมอ
-
+  document.getElementById('ocrUploadBtn').onclick = openOCRReaderExternal;
   document.getElementById('fShipping').addEventListener('input', updateAllocPreview);
   document.getElementById('fOther').addEventListener('input', updateAllocPreview);
   document.getElementById('discountList').addEventListener('input', updateAllocPreview);
@@ -3656,6 +3664,9 @@ async function renderAddPurchase(){
       };
     });
   }
+
+  window.addItemRowGlobal = addItemRow;     // ← เพิ่มบรรทัดนี้
+
 
   // หารค่าส่ง/ค่าอื่นๆ/ส่วนลดรวม ตามสัดส่วนราคาสินค้าแต่ละรายการ
   // เศษที่เหลือจากการปัดเศษ ยกให้รายการสุดท้าย กันผลรวมเพี้ยนจากราคาต้นทาง
@@ -4473,6 +4484,9 @@ const GITHUB_ORIGIN = "https://kunjay-eng.github.io";
 const SCANNER_URL =
   "https://kunjay-eng.github.io/product-manager/scanner.html";
 
+//const OCR_READER_URL = "https://kunjay-eng.github.io/product-manager/ocr-reader.html";
+
+
 let qrSession = null;
 let scannerWindow = null;
 
@@ -4552,6 +4566,87 @@ function handleScannedQR(text){
     toast('QR นี้ไม่ใช่ลิงก์สินค้าในระบบนี้');
   }
 }
+
+// ======================================
+// GitHub OCR Reader (อ่านรูปคำสั่งซื้อด้วย AI)
+// ======================================
+const OCR_READER_URL = "https://kunjay-eng.github.io/product-manager/ocr-reader.html";
+
+let ocrSession = null;
+let ocrWindow = null;
+
+function openOCRReaderExternal(){
+  ocrSession = crypto.randomUUID();
+  ocrWindow = window.open(
+    OCR_READER_URL + "?session=" + encodeURIComponent(ocrSession),
+    "ocrReader",
+    "width=460,height=800"
+  );
+}
+
+window.addEventListener("message", function (event) {
+  // ใช้ GITHUB_ORIGIN ตัวเดียวกับ QR scanner (ประกาศไว้แล้วด้านบนในไฟล์)
+  if (event.origin !== GITHUB_ORIGIN) return;
+
+  const data = event.data;
+  if (!data || data.type !== "OCR_RESULT") return;
+  if (data.session !== ocrSession) return;
+
+  try {
+    if (ocrWindow && !ocrWindow.closed) ocrWindow.close();
+  } catch (e) {}
+  ocrSession = null;
+
+  handleOCRResult(data.data);
+});
+
+/**
+ * data = { store_name, order_date, order_no, items:[{product_name, qty, total_price}] }
+ * เติมข้อมูลลงในฟอร์ม "บันทึกการซื้อ" ที่เปิดอยู่ (renderAddPurchase)
+ * ให้ผู้ใช้ตรวจสอบ/แก้หมวดสินค้าเอง แล้วค่อยกดปุ่ม "บันทึกการซื้อทั้งออเดอร์" ตามปกติ
+ */
+function handleOCRResult(data){
+  if (!data || !document.getElementById('orderItemsList')) {
+    toast('ไม่พบฟอร์มบันทึกการซื้อ กรุณาเปิดหน้า "บันทึกซื้อ" แล้วลองใหม่');
+    return;
+  }
+
+  // เติมข้อมูลหัวออเดอร์ ถ้า AI อ่านได้
+  if (data.store_name) document.getElementById('fStore').value = data.store_name;
+  if (data.order_no)   document.getElementById('fOrderNo').value = data.order_no;
+  if (data.order_date && /^\d{4}-\d{2}-\d{2}$/.test(data.order_date)) {
+    document.getElementById('fDate').value = data.order_date;
+  }
+
+  // ล้างรายการสินค้าว่างที่ auto-add ไว้ตอนเปิดหน้า (ถ้ายังไม่มีใครกรอกอะไร)
+  const itemsList = document.getElementById('orderItemsList');
+  const existingRows = Array.from(itemsList.querySelectorAll('.order-item'));
+  const firstRowEmpty = existingRows.length === 1 &&
+    !document.getElementById(`fGroup-${existingRows[0].dataset.idx}`).value.trim();
+  if (firstRowEmpty) existingRows[0].remove();
+
+  // เพิ่มรายการสินค้าที่ AI อ่านได้ ทีละแถว โดยใช้ createOrderItemRow/wireItemRow เดิม
+  (data.items || []).forEach(it => {
+    const { row, idx } = createOrderItemRow();
+    itemsList.appendChild(row);
+    wireItemRowGlobal(idx);
+
+    document.getElementById(`fGroup-${idx}`).value = it.product_name || '';
+    document.getElementById(`fQty-${idx}`).value = it.qty || 1;
+    document.getElementById(`fUnitBuy-${idx}`).value = 'ชิ้น';
+    document.getElementById(`fRatio-${idx}`).value = 1;
+    document.getElementById(`fUnitSell-${idx}`).value = 'ชิ้น';
+    document.getElementById(`fItemPrice-${idx}`).value = it.total_price || 0;
+  });
+
+  if (itemsList.querySelectorAll('.order-item').length === 0) addItemRowGlobal();
+
+  toast(`เติมข้อมูลจาก AI แล้ว ${(data.items||[]).length} รายการ — กรุณาตรวจสอบหมวดสินค้า/ตัวเลขก่อนกดบันทึก`);
+  if (typeof updateAllocPreview === 'function') updateAllocPreview();
+}
+
+
+
 </script>
 
 
