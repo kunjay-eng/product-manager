@@ -17,8 +17,9 @@
   h1{font-size:18px; margin:0 0 4px;}
   p.sub{font-size:12.5px; color:var(--ink-soft); margin:0 0 16px;}
   .card{background:var(--card); border:1.5px solid var(--line); border-radius:var(--radius); padding:14px; margin-bottom:14px;}
-  label{display:block; font-size:12.5px; font-weight:700; color:var(--ink-soft); margin-bottom:6px;}
-  input[type=password], input[type=text]{
+  label{display:block; font-size:12.5px; font-weight:700; color:var(--ink-soft); margin-bottom:6px; margin-top:10px;}
+  label:first-child{margin-top:0;}
+  input[type=password], input[type=text], input[type=number], input[type=url]{
     width:100%; padding:11px 12px; border:1.5px solid var(--line); border-radius:10px;
     font-size:14px; background:var(--bg); color:var(--ink);
   }
@@ -48,10 +49,18 @@
   @keyframes spin{to{transform:rotate(360deg);}}
   .status{font-size:12.5px; color:var(--ink-soft); text-align:center; margin-top:10px;}
   .section-title{font-size:13px; font-weight:700; margin:18px 0 8px;}
-  .item-row{border:1.5px solid var(--line); border-radius:10px; padding:10px; margin-bottom:8px; background:var(--bg);}
-  .item-row .field-row{display:flex; gap:8px; margin-top:6px;}
-  .item-row input{font-size:13px; padding:8px 9px;}
-  .item-row .rm-item{background:none; border:none; color:var(--danger); font-size:12px; float:right; cursor:pointer;}
+  .field-row{display:flex; gap:8px;}
+  .field-row > div{flex:1;}
+  .item-row{border:1.5px solid var(--line); border-radius:10px; padding:12px; margin-bottom:10px; background:var(--bg); position:relative;}
+  .item-row input{font-size:13px; padding:9px 10px;}
+  .item-row .item-title{font-size:12.5px; font-weight:700; color:var(--ink-soft);}
+  .item-row .rm-item{position:absolute; top:10px; right:10px; background:none; border:none; color:var(--danger); font-size:13px; cursor:pointer;}
+  .discount-row{display:flex; gap:6px; margin-top:8px; align-items:center;}
+  .discount-row input{font-size:13px;}
+  .discount-row .disc-name{flex:1.4;}
+  .discount-row .disc-amount{flex:0.9;}
+  .discount-row .disc-rm{flex-shrink:0; background:none; border:none; color:var(--danger); font-size:16px; cursor:pointer; padding:4px 6px;}
+  .note{font-size:11px; color:var(--ink-soft); margin-top:2px;}
   .error-box{background:#FDEDED; border:1.5px solid var(--danger); color:var(--danger); border-radius:10px; padding:10px 12px; font-size:12.5px; margin-top:10px;}
   #reviewCard{display:none;}
 </style>
@@ -59,7 +68,7 @@
 <body>
 
 <h1>📸 อ่านคำสั่งซื้อด้วย AI</h1>
-<p class="sub">อัพโหลดได้หลายรูป (หน้ารายละเอียดคำสั่งซื้อ + รายการสินค้า) แล้วให้ AI อ่านให้ ก่อนส่งกลับไปกรอกฟอร์ม จะให้ตรวจสอบ/แก้ไขในหน้านี้ก่อนเสมอ</p>
+<p class="sub">อัพโหลดได้หลายรูป (หน้ารายละเอียดคำสั่งซื้อ + รายการสินค้า) แล้วให้ AI อ่านให้ ก่อนส่งกลับไปกรอกฟอร์ม จะให้ตรวจสอบ/แก้ไขในหน้านี้ก่อนเสมอ — ฟอร์มด้านล่างนี้เหมือนหน้า "บันทึกการซื้อ" ในเว็บแอปทุกช่อง</p>
 
 <div class="card" id="keyCard">
   <label for="apiKey">Gemini API Key (ฟรี, ใส่ครั้งเดียวจำไว้ในเครื่องนี้)</label>
@@ -84,18 +93,28 @@
   <div class="section-title">✅ ตรวจสอบผลลัพธ์ก่อนส่งไปกรอกฟอร์ม</div>
 
   <label>ร้านค้า</label>
-  <input type="text" id="rStore">
+  <input type="text" id="rStore" placeholder="เช่น Makro (ถ้าภาพไม่มีชื่อร้าน กรอกเองตรงนี้ได้เลย)">
 
-  <div class="field-row" style="display:flex; gap:8px; margin-top:10px;">
-    <div style="flex:1;"><label>วันที่ซื้อ</label><input type="text" id="rDate" placeholder="YYYY-MM-DD"></div>
-    <div style="flex:1;"><label>เลขที่คำสั่งซื้อ</label><input type="text" id="rOrderNo"></div>
+  <div class="field-row" style="margin-top:10px;">
+    <div><label>วันที่ซื้อ</label><input type="text" id="rDate" placeholder="YYYY-MM-DD"></div>
+    <div><label>เลขที่คำสั่งซื้อ</label><input type="text" id="rOrderNo"></div>
   </div>
 
-  <div class="section-title">🛒 รายการสินค้าที่อ่านได้</div>
+  <div class="section-title">🛒 สินค้าในออเดอร์นี้</div>
   <div id="itemsWrap"></div>
-  <button class="btn btn-ghost" id="addItemBtn" style="margin-top:4px;">+ เพิ่มรายการ</button>
+  <button class="btn btn-ghost" id="addItemBtn" style="margin-top:2px;">+ เพิ่มสินค้าอีกรายการ</button>
 
-  <button class="btn btn-mint" id="confirmBtn" style="margin-top:16px;">✔ ยืนยัน ส่งกลับไปกรอกฟอร์ม</button>
+  <div class="section-title">💰 ค่าใช้จ่ายรวมทั้งออเดอร์ (หารตามสัดส่วนราคาสินค้าให้อัตโนมัติ)</div>
+  <div class="field-row">
+    <div><label>ค่าขนส่งรวม</label><input type="number" id="rShipping" value="0"></div>
+    <div><label>ค่าใช้จ่ายอื่นๆ รวม</label><input type="number" id="rOther" value="0"></div>
+  </div>
+
+  <label style="margin-top:14px;">ส่วนลดรวมทั้งออเดอร์ (ถ้ามี — เพิ่มได้หลายรายการ)</label>
+  <div id="discountList"></div>
+  <button class="btn btn-ghost" id="addDiscountBtn" style="margin-top:4px;">+ เพิ่มรายการส่วนลด</button>
+
+  <button class="btn btn-mint" id="confirmBtn" style="margin-top:18px;">✔ ยืนยัน ส่งกลับไปกรอกฟอร์ม</button>
 </div>
 
 <script>
@@ -144,16 +163,31 @@ function setStatus(html){
 const RESPONSE_SCHEMA = {
   type: "OBJECT",
   properties: {
-    store_name: { type: "STRING" },
+    store_name: { type: "STRING", description: "ชื่อร้านค้า/ผู้ขาย ถ้ามีแสดงในภาพ (เช่น ชื่อร้านบน Shopee/Lazada) ถ้าไม่เห็นให้เว้นว่าง" },
     order_no: { type: "STRING" },
     order_date: { type: "STRING", description: "รูปแบบ YYYY-MM-DD ถ้าอ่านไม่ได้ให้เว้นว่าง" },
+    shipping: { type: "NUMBER", description: "ค่าจัดส่งรวมทั้งออเดอร์ (บาท) ถ้ามีบรรทัดแยกแสดงในสรุปคำสั่งซื้อ ถ้าไม่เห็นให้ใส่ 0" },
+    other_cost: { type: "NUMBER", description: "ค่าธรรมเนียม/ค่าใช้จ่ายอื่นๆ รวม (บาท) ถ้าไม่เห็นให้ใส่ 0" },
+    discounts: {
+      type: "ARRAY",
+      description: "ส่วนลดรวมทั้งออเดอร์ (ถ้ามีบรรทัดแยก เช่น ส่วนลดโค้ด, ส่วนลดร้านค้า) ถ้าไม่เห็นให้เว้นว่างเป็น array ว่าง",
+      items: {
+        type: "OBJECT",
+        properties: {
+          name: { type: "STRING" },
+          amount: { type: "NUMBER" }
+        }
+      }
+    },
     items: {
       type: "ARRAY",
       items: {
         type: "OBJECT",
         properties: {
           product_name: { type: "STRING" },
+          product_url: { type: "STRING", description: "ลิงก์สินค้า ถ้ามีแสดงในภาพ ปกติจะไม่มี เว้นว่างได้" },
           qty: { type: "NUMBER" },
+          unit_price: { type: "NUMBER", description: "ราคาต่อชิ้น ถ้าคำนวณ/อ่านได้ชัดเจน ไม่แน่ใจให้เว้นว่าง" },
           total_price: { type: "NUMBER", description: "ราคารวมของรายการนี้ (บาท) ตามที่แสดงในภาพ" }
         },
         required: ["product_name", "qty", "total_price"]
@@ -165,13 +199,19 @@ const RESPONSE_SCHEMA = {
 
 const PROMPT = `คุณกำลังดูภาพหน้าจอ "รายละเอียดคำสั่งซื้อ" จากแอปช้อปปิ้งออนไลน์ (เช่น Shopee, Lazada) อาจมีหลายภาพ
 - ภาพหนึ่งอาจเป็นรายการสินค้าที่ซื้อ (ชื่อสินค้า/ตัวเลือกสินค้า, จำนวน xN, ราคา)
-- อีกภาพอาจเป็นข้อมูลคำสั่งซื้อ (หมายเลขคำสั่งซื้อ, วันเวลาที่สั่งซื้อ)
+- อีกภาพอาจเป็นข้อมูลคำสั่งซื้อ (หมายเลขคำสั่งซื้อ, วันเวลาที่สั่งซื้อ, ชื่อร้านค้า)
+- อีกภาพอาจเป็นสรุปยอดชำระ (ราคาสินค้ารวม, ค่าจัดส่ง, ส่วนลด, ยอดรวมสุทธิ)
 ให้รวมข้อมูลจากทุกภาพเป็นคำสั่งซื้อเดียวกัน แล้วดึงข้อมูลออกมาเป็น JSON ตาม schema ที่กำหนด
 - product_name: ใช้ชื่อสินค้าที่เจาะจงที่สุดที่เห็น (รวมสี/รุ่น/ตัวเลือกถ้ามี) ไม่ใช่ชื่อหมวดกว้างๆ
 - qty: จำนวนที่ซื้อของรายการนั้น (ตัวเลขหลัง x)
 - total_price: ราคารวมของบรรทัดนั้นตามตัวเลขที่แสดงในภาพ (ไม่ต้องคำนวณเอง อ่านตามที่เห็น)
+- shipping / other_cost / discounts: ดึงเฉพาะกรณีที่มีบรรทัดแยกแสดงชัดเจนในภาพสรุปยอด (เช่น "ค่าจัดส่ง", "ส่วนลด") ถ้าภาพที่ให้มาไม่มีส่วนสรุปยอดแบบนี้ ห้ามเดา ให้ใส่ 0 หรือ array ว่าง
+- store_name: มักอยู่ "บนสุด" ของหน้ารายละเอียดคำสั่งซื้อ เสมอให้ตรวจดูส่วนบนสุดของทุกภาพก่อนก่อนสรุปว่าไม่มี
+  - บางร้านมีป้าย/แบดจ์นำหน้าชื่อร้าน เช่น "ร้านแนะนำดีเยี่ยม", "Preferred", "Mall" — ถ้าเจอแบบนี้ ให้เอาเฉพาะชื่อร้านที่ตามหลังป้าย ไม่เอาข้อความป้ายมาเป็นชื่อร้าน (เช่น "ร้านแนะนำดีเยี่ยม RealWoodPC" → ชื่อร้านคือ "RealWoodPC")
+  - บางร้านไม่มีป้ายใดๆ เลย โชว์ชื่อร้านตรงๆ อยู่แถวบนสุด (อาจมีไอคอนร้าน/โลโก้อยู่ข้างๆ หรือมีปุ่ม "เข้าดูร้านค้า"/"ดูร้าน" อยู่ใกล้ๆ) ให้ใช้ชื่อนั้นเป็น store_name ได้เลย
+  - ถ้าหาไม่เจอจริงๆ ทั้งสองแบบ (มีแต่รายการสินค้ากับเลขคำสั่งซื้อ ไม่มีส่วนหัวร้านค้าเลยในทุกภาพที่ให้มา) ให้เว้นว่างไว้ ห้ามเดาจากชื่อสินค้าหรือแบรนด์สินค้า
 - ถ้ารายการไหน "คืนเงินแล้ว" หรือถูกยกเลิก ให้ข้ามไม่ต้องใส่ในผลลัพธ์
-- ถ้าอ่านหมายเลขคำสั่งซื้อหรือชื่อร้านไม่ได้ ให้เว้นว่างไว้ ห้ามเดา
+- ห้ามเดาข้อมูลที่ไม่ปรากฏในภาพเด็ดขาด เว้นว่างไว้ดีกว่าเดา
 ตอบกลับเป็น JSON เท่านั้น`;
 
 document.getElementById('readBtn').onclick = async () => {
@@ -236,17 +276,42 @@ document.getElementById('readBtn').onclick = async () => {
   }
 };
 
+/* ============================================================
+   รายการสินค้า — ฟิลด์เหมือนฟอร์ม "บันทึกการซื้อ" ในเว็บแอปทุกช่อง
+   (หมวดสินค้าหลักเว้นว่างไว้เสมอ ให้ผู้ใช้เลือกเองตอนอยู่ในฟอร์มหลัก
+   เพราะ AI เดาหมวดสินค้าผิดง่าย และอาจไปสร้างหมวดใหม่ซ้ำซ้อนในระบบ)
+   ============================================================ */
 let itemSeq = 0;
 function itemRowHtml(idx, item){
+  const esc = s => (s || '').toString().replace(/"/g, '&quot;');
   return `
     <div class="item-row" data-idx="${idx}">
       <button class="rm-item" data-idx="${idx}">✕ ลบ</button>
-      <label>ชื่อสินค้า</label>
-      <input type="text" id="riName-${idx}" value="${(item.product_name||'').replace(/"/g,'&quot;')}">
-      <div class="field-row">
-        <div style="flex:1;"><label>จำนวน</label><input type="number" id="riQty-${idx}" value="${item.qty ?? ''}"></div>
-        <div style="flex:1;"><label>ราคารวม (บาท)</label><input type="number" id="riPrice-${idx}" value="${item.total_price ?? ''}"></div>
+      <div class="item-title">สินค้าที่ ${idx + 1}</div>
+
+      <label>หมวดสินค้าหลัก</label>
+      <input type="text" id="riCategory-${idx}" placeholder="เช่น ขนม (กรอกเอง — AI ไม่เดาให้)">
+
+      <label>กลุ่มสินค้า</label>
+      <input type="text" id="riGroup-${idx}" value="${esc(item.product_name)}">
+
+      <label>ลิงค์สินค้า (ไม่บังคับ)</label>
+      <input type="url" id="riUrl-${idx}" value="${esc(item.product_url)}" placeholder="เช่น ลิงก์ Shopee, Lazada">
+
+      <div class="field-row" style="margin-top:10px;">
+        <div><label>จำนวนซื้อ</label><input type="number" id="riQty-${idx}" value="${item.qty ?? ''}"></div>
+        <div><label>หน่วยซื้อ</label><input type="text" id="riUnitBuy-${idx}" value="ชิ้น"></div>
       </div>
+      <div class="field-row">
+        <div><label>เรโช (1 หน่วยซื้อ = กี่หน่วยขาย)</label><input type="number" id="riRatio-${idx}" value="1"></div>
+        <div><label>หน่วยขาย</label><input type="text" id="riUnitSell-${idx}" value="ชิ้น"></div>
+      </div>
+
+      <label>ราคาต่อชิ้น (ไม่บังคับ)</label>
+      <input type="number" id="riUnitPrice-${idx}" value="${item.unit_price ?? ''}">
+
+      <label>ราคาสินค้ารายการนี้ (บาท รวมทั้งจำนวนที่ซื้อ)</label>
+      <input type="number" id="riItemPrice-${idx}" value="${item.total_price ?? ''}">
     </div>`;
 }
 
@@ -254,6 +319,12 @@ function showReview(parsed){
   document.getElementById('rStore').value = parsed.store_name || '';
   document.getElementById('rDate').value = parsed.order_date || '';
   document.getElementById('rOrderNo').value = parsed.order_no || '';
+  document.getElementById('rShipping').value = parsed.shipping || 0;
+  document.getElementById('rOther').value = parsed.other_cost || 0;
+
+  const discList = document.getElementById('discountList');
+  discList.innerHTML = '';
+  (parsed.discounts || []).forEach(d => { if (d && Number(d.amount) > 0) addDiscountRow(d.name, d.amount); });
 
   const wrap = document.getElementById('itemsWrap');
   wrap.innerHTML = '';
@@ -276,14 +347,33 @@ function addItemRow(item){
 }
 document.getElementById('addItemBtn').onclick = () => addItemRow({});
 
+function addDiscountRow(name, amount){
+  const list = document.getElementById('discountList');
+  const row = document.createElement('div');
+  row.className = 'discount-row';
+  row.innerHTML = `
+    <input class="disc-name" type="text" placeholder="ชื่อส่วนลด เช่น โค้ดส่วนลด" value="${(name||'').replace(/"/g,'&quot;')}">
+    <input class="disc-amount" type="number" placeholder="0" value="${amount ?? ''}">
+    <button type="button" class="disc-rm">✕</button>`;
+  row.querySelector('.disc-rm').onclick = () => row.remove();
+  list.appendChild(row);
+}
+document.getElementById('addDiscountBtn').onclick = () => addDiscountRow('', '');
+
 document.getElementById('confirmBtn').onclick = () => {
   const rows = Array.from(document.getElementById('itemsWrap').querySelectorAll('.item-row'));
   const items = rows.map(r => {
     const idx = r.dataset.idx;
     return {
-      product_name: document.getElementById(`riName-${idx}`).value.trim(),
+      category_name: document.getElementById(`riCategory-${idx}`).value.trim(),
+      product_name: document.getElementById(`riGroup-${idx}`).value.trim(),
+      product_url: document.getElementById(`riUrl-${idx}`).value.trim(),
       qty: parseFloat(document.getElementById(`riQty-${idx}`).value || '0'),
-      total_price: parseFloat(document.getElementById(`riPrice-${idx}`).value || '0'),
+      unit_buy: document.getElementById(`riUnitBuy-${idx}`).value.trim(),
+      ratio: parseFloat(document.getElementById(`riRatio-${idx}`).value || '0'),
+      unit_sell: document.getElementById(`riUnitSell-${idx}`).value.trim(),
+      unit_price: parseFloat(document.getElementById(`riUnitPrice-${idx}`).value || '0'),
+      total_price: parseFloat(document.getElementById(`riItemPrice-${idx}`).value || '0'),
     };
   }).filter(it => it.product_name);
 
@@ -292,6 +382,13 @@ document.getElementById('confirmBtn').onclick = () => {
     return;
   }
 
+  const discounts = Array.from(document.querySelectorAll('#discountList .discount-row'))
+    .map(row => ({
+      name: row.querySelector('.disc-name').value.trim(),
+      amount: parseFloat(row.querySelector('.disc-amount').value || '0')
+    }))
+    .filter(d => d.amount > 0);
+
   const payload = {
     type: 'OCR_RESULT',
     session: SESSION,
@@ -299,6 +396,9 @@ document.getElementById('confirmBtn').onclick = () => {
       store_name: document.getElementById('rStore').value.trim(),
       order_date: document.getElementById('rDate').value.trim(),
       order_no: document.getElementById('rOrderNo').value.trim(),
+      shipping: parseFloat(document.getElementById('rShipping').value || '0'),
+      other_cost: parseFloat(document.getElementById('rOther').value || '0'),
+      discounts,
       items
     }
   };
