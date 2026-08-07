@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>อ่านรูปคำสั่งซื้อด้วย AI</title>
+<style>
+  :root{
+    --bg:#F7F3EE; --card:#FFFFFF; --line:#E6DFD6; --ink:#3A2E28; --ink-soft:#8A7E73;
+    --accent:#FF6B4A; --mint:#2FAE7A; --danger:#E5484D; --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    background:var(--bg); color:var(--ink); padding:16px; padding-bottom:80px;
+  }
+  h1{font-size:18px; margin:0 0 4px;}
+  p.sub{font-size:12.5px; color:var(--ink-soft); margin:0 0 16px;}
+  .card{background:var(--card); border:1.5px solid var(--line); border-radius:var(--radius); padding:14px; margin-bottom:14px;}
+  label{display:block; font-size:12.5px; font-weight:700; color:var(--ink-soft); margin-bottom:6px;}
+  input[type=password], input[type=text]{
+    width:100%; padding:11px 12px; border:1.5px solid var(--line); border-radius:10px;
+    font-size:14px; background:var(--bg); color:var(--ink);
+  }
+  .hint{font-size:11px; color:var(--ink-soft); margin-top:6px; line-height:1.5;}
+  .hint a{color:var(--accent);}
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:6px;
+    padding:12px 16px; border-radius:12px; border:none; font-size:14.5px; font-weight:700;
+    cursor:pointer; width:100%;
+  }
+  .btn-primary{background:var(--accent); color:#fff;}
+  .btn-primary:disabled{opacity:.5; cursor:not-allowed;}
+  .btn-ghost{background:var(--card); color:var(--ink); border:1.5px solid var(--line);}
+  .btn-mint{background:var(--mint); color:#fff;}
+  #fileInput{display:none;}
+  .thumbs{display:flex; flex-wrap:wrap; gap:8px; margin-top:12px;}
+  .thumb{position:relative; width:76px; height:76px; border-radius:10px; overflow:hidden; border:1.5px solid var(--line);}
+  .thumb img{width:100%; height:100%; object-fit:cover; display:block;}
+  .thumb .rm{
+    position:absolute; top:2px; right:2px; background:rgba(0,0,0,.55); color:#fff; border:none;
+    width:20px; height:20px; border-radius:50%; font-size:12px; cursor:pointer; line-height:1;
+  }
+  .spinner{
+    width:22px; height:22px; border:3px solid rgba(0,0,0,.1); border-top-color:var(--accent);
+    border-radius:50%; animation:spin .8s linear infinite; margin:0 auto;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .status{font-size:12.5px; color:var(--ink-soft); text-align:center; margin-top:10px;}
+  .section-title{font-size:13px; font-weight:700; margin:18px 0 8px;}
+  .item-row{border:1.5px solid var(--line); border-radius:10px; padding:10px; margin-bottom:8px; background:var(--bg);}
+  .item-row .field-row{display:flex; gap:8px; margin-top:6px;}
+  .item-row input{font-size:13px; padding:8px 9px;}
+  .item-row .rm-item{background:none; border:none; color:var(--danger); font-size:12px; float:right; cursor:pointer;}
+  .error-box{background:#FDEDED; border:1.5px solid var(--danger); color:var(--danger); border-radius:10px; padding:10px 12px; font-size:12.5px; margin-top:10px;}
+  #reviewCard{display:none;}
+</style>
+</head>
+<body>
+
+<h1>📸 อ่านคำสั่งซื้อด้วย AI</h1>
+<p class="sub">อัพโหลดได้หลายรูป (หน้ารายละเอียดคำสั่งซื้อ + รายการสินค้า) แล้วให้ AI อ่านให้ ก่อนส่งกลับไปกรอกฟอร์ม จะให้ตรวจสอบ/แก้ไขในหน้านี้ก่อนเสมอ</p>
+
+<div class="card" id="keyCard">
+  <label for="apiKey">Gemini API Key (ฟรี, ใส่ครั้งเดียวจำไว้ในเครื่องนี้)</label>
+  <input type="password" id="apiKey" placeholder="วางคีย์ที่นี่">
+  <div class="hint">
+    ยังไม่มีคีย์? ไปขอฟรีที่ <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a> (ล็อกอินด้วย Gmail แล้วกด Create API Key)<br>
+    คีย์จะถูกเก็บไว้ใน localStorage ของเบราว์เซอร์เครื่องนี้เท่านั้น ไม่ถูกส่งไปที่ไหนนอกจาก Google
+  </div>
+</div>
+
+<div class="card">
+  <label>รูปภาพ</label>
+  <input type="file" id="fileInput" accept="image/*" multiple>
+  <button class="btn btn-ghost" id="pickBtn">➕ เลือกรูป (เลือกได้หลายรูป)</button>
+  <div class="thumbs" id="thumbs"></div>
+</div>
+
+<button class="btn btn-primary" id="readBtn">🤖 อ่านด้วย AI</button>
+<div id="statusArea"></div>
+
+<div class="card" id="reviewCard">
+  <div class="section-title">✅ ตรวจสอบผลลัพธ์ก่อนส่งไปกรอกฟอร์ม</div>
+
+  <label>ร้านค้า</label>
+  <input type="text" id="rStore">
+
+  <div class="field-row" style="display:flex; gap:8px; margin-top:10px;">
+    <div style="flex:1;"><label>วันที่ซื้อ</label><input type="text" id="rDate" placeholder="YYYY-MM-DD"></div>
+    <div style="flex:1;"><label>เลขที่คำสั่งซื้อ</label><input type="text" id="rOrderNo"></div>
+  </div>
+
+  <div class="section-title">🛒 รายการสินค้าที่อ่านได้</div>
+  <div id="itemsWrap"></div>
+  <button class="btn btn-ghost" id="addItemBtn" style="margin-top:4px;">+ เพิ่มรายการ</button>
+
+  <button class="btn btn-mint" id="confirmBtn" style="margin-top:16px;">✔ ยืนยัน ส่งกลับไปกรอกฟอร์ม</button>
+</div>
+
+<script>
+const params = new URLSearchParams(location.search);
+const SESSION = params.get('session');
+
+const apiKeyInput = document.getElementById('apiKey');
+apiKeyInput.value = localStorage.getItem('gemini_api_key') || '';
+apiKeyInput.addEventListener('input', () => localStorage.setItem('gemini_api_key', apiKeyInput.value.trim()));
+
+let files = [];
+
+document.getElementById('pickBtn').onclick = () => document.getElementById('fileInput').click();
+document.getElementById('fileInput').onchange = (e) => {
+  files = files.concat(Array.from(e.target.files));
+  renderThumbs();
+  e.target.value = '';
+};
+
+function renderThumbs(){
+  const wrap = document.getElementById('thumbs');
+  wrap.innerHTML = '';
+  files.forEach((f, i) => {
+    const url = URL.createObjectURL(f);
+    const div = document.createElement('div');
+    div.className = 'thumb';
+    div.innerHTML = `<img src="${url}"><button class="rm" data-i="${i}">✕</button>`;
+    div.querySelector('.rm').onclick = () => { files.splice(i, 1); renderThumbs(); };
+    wrap.appendChild(div);
+  });
+}
+
+function fileToBase64(file){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function setStatus(html){
+  document.getElementById('statusArea').innerHTML = html;
+}
+
+const RESPONSE_SCHEMA = {
+  type: "OBJECT",
+  properties: {
+    store_name: { type: "STRING" },
+    order_no: { type: "STRING" },
+    order_date: { type: "STRING", description: "รูปแบบ YYYY-MM-DD ถ้าอ่านไม่ได้ให้เว้นว่าง" },
+    items: {
+      type: "ARRAY",
+      items: {
+        type: "OBJECT",
+        properties: {
+          product_name: { type: "STRING" },
+          qty: { type: "NUMBER" },
+          total_price: { type: "NUMBER", description: "ราคารวมของรายการนี้ (บาท) ตามที่แสดงในภาพ" }
+        },
+        required: ["product_name", "qty", "total_price"]
+      }
+    }
+  },
+  required: ["items"]
+};
+
+const PROMPT = `คุณกำลังดูภาพหน้าจอ "รายละเอียดคำสั่งซื้อ" จากแอปช้อปปิ้งออนไลน์ (เช่น Shopee, Lazada) อาจมีหลายภาพ
+- ภาพหนึ่งอาจเป็นรายการสินค้าที่ซื้อ (ชื่อสินค้า/ตัวเลือกสินค้า, จำนวน xN, ราคา)
+- อีกภาพอาจเป็นข้อมูลคำสั่งซื้อ (หมายเลขคำสั่งซื้อ, วันเวลาที่สั่งซื้อ)
+ให้รวมข้อมูลจากทุกภาพเป็นคำสั่งซื้อเดียวกัน แล้วดึงข้อมูลออกมาเป็น JSON ตาม schema ที่กำหนด
+- product_name: ใช้ชื่อสินค้าที่เจาะจงที่สุดที่เห็น (รวมสี/รุ่น/ตัวเลือกถ้ามี) ไม่ใช่ชื่อหมวดกว้างๆ
+- qty: จำนวนที่ซื้อของรายการนั้น (ตัวเลขหลัง x)
+- total_price: ราคารวมของบรรทัดนั้นตามตัวเลขที่แสดงในภาพ (ไม่ต้องคำนวณเอง อ่านตามที่เห็น)
+- ถ้ารายการไหน "คืนเงินแล้ว" หรือถูกยกเลิก ให้ข้ามไม่ต้องใส่ในผลลัพธ์
+- ถ้าอ่านหมายเลขคำสั่งซื้อหรือชื่อร้านไม่ได้ ให้เว้นว่างไว้ ห้ามเดา
+ตอบกลับเป็น JSON เท่านั้น`;
+
+document.getElementById('readBtn').onclick = async () => {
+  const apiKey = apiKeyInput.value.trim();
+  if (!apiKey){ setStatus('<div class="error-box">กรุณาใส่ Gemini API Key ก่อน</div>'); return; }
+  if (files.length === 0){ setStatus('<div class="error-box">กรุณาเลือกรูปอย่างน้อย 1 รูป</div>'); return; }
+
+  const btn = document.getElementById('readBtn');
+  btn.disabled = true;
+  setStatus('<div class="spinner"></div><div class="status">กำลังแปลงรูปและอ่านด้วย AI...</div>');
+
+  try{
+    const parts = [{ text: PROMPT }];
+    for (const f of files){
+      const b64 = await fileToBase64(f);
+      parts.push({ inline_data: { mime_type: f.type || 'image/jpeg', data: b64 } });
+    }
+
+    const model = 'gemini-2.5-flash';
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+      body: JSON.stringify({
+        contents: [{ role: 'user', parts }],
+        generationConfig: {
+          responseMimeType: 'application/json',
+          responseSchema: RESPONSE_SCHEMA
+        }
+      })
+    });
+
+    if (!res.ok){
+      const errText = await res.text();
+      throw new Error(`API error ${res.status}: ${errText.slice(0,200)}`);
+    }
+
+    const data = await res.json();
+    const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!rawText) throw new Error('AI ไม่ได้ส่งข้อมูลกลับมา ลองใหม่อีกครั้ง');
+
+    const parsed = JSON.parse(rawText);
+    showReview(parsed);
+    setStatus('<div class="status">✅ อ่านเสร็จแล้ว ตรวจสอบด้านล่างก่อนส่งกลับ</div>');
+
+  } catch(err){
+    setStatus(`<div class="error-box">อ่านไม่สำเร็จ: ${err.message || err}<br>ลองตรวจสอบ API Key หรือรูปภาพ แล้วกด "อ่านด้วย AI" อีกครั้ง</div>`);
+  } finally{
+    btn.disabled = false;
+  }
+};
+
+let itemSeq = 0;
+function itemRowHtml(idx, item){
+  return `
+    <div class="item-row" data-idx="${idx}">
+      <button class="rm-item" data-idx="${idx}">✕ ลบ</button>
+      <label>ชื่อสินค้า</label>
+      <input type="text" id="riName-${idx}" value="${(item.product_name||'').replace(/"/g,'&quot;')}">
+      <div class="field-row">
+        <div style="flex:1;"><label>จำนวน</label><input type="number" id="riQty-${idx}" value="${item.qty ?? ''}"></div>
+        <div style="flex:1;"><label>ราคารวม (บาท)</label><input type="number" id="riPrice-${idx}" value="${item.total_price ?? ''}"></div>
+      </div>
+    </div>`;
+}
+
+function showReview(parsed){
+  document.getElementById('rStore').value = parsed.store_name || '';
+  document.getElementById('rDate').value = parsed.order_date || '';
+  document.getElementById('rOrderNo').value = parsed.order_no || '';
+
+  const wrap = document.getElementById('itemsWrap');
+  wrap.innerHTML = '';
+  itemSeq = 0;
+  (parsed.items || []).forEach(it => addItemRow(it));
+  if ((parsed.items || []).length === 0) addItemRow({});
+
+  document.getElementById('reviewCard').style.display = 'block';
+  document.getElementById('reviewCard').scrollIntoView({ behavior: 'smooth' });
+}
+
+function addItemRow(item){
+  const idx = itemSeq++;
+  const wrap = document.getElementById('itemsWrap');
+  const div = document.createElement('div');
+  div.innerHTML = itemRowHtml(idx, item || {});
+  const row = div.firstElementChild;
+  wrap.appendChild(row);
+  row.querySelector('.rm-item').onclick = () => row.remove();
+}
+document.getElementById('addItemBtn').onclick = () => addItemRow({});
+
+document.getElementById('confirmBtn').onclick = () => {
+  const rows = Array.from(document.getElementById('itemsWrap').querySelectorAll('.item-row'));
+  const items = rows.map(r => {
+    const idx = r.dataset.idx;
+    return {
+      product_name: document.getElementById(`riName-${idx}`).value.trim(),
+      qty: parseFloat(document.getElementById(`riQty-${idx}`).value || '0'),
+      total_price: parseFloat(document.getElementById(`riPrice-${idx}`).value || '0'),
+    };
+  }).filter(it => it.product_name);
+
+  if (items.length === 0){
+    setStatus('<div class="error-box">ต้องมีอย่างน้อย 1 รายการสินค้าที่มีชื่อ</div>');
+    return;
+  }
+
+  const payload = {
+    type: 'OCR_RESULT',
+    session: SESSION,
+    data: {
+      store_name: document.getElementById('rStore').value.trim(),
+      order_date: document.getElementById('rDate').value.trim(),
+      order_no: document.getElementById('rOrderNo').value.trim(),
+      items
+    }
+  };
+
+  if (window.opener){
+    window.opener.postMessage(payload, '*');
+    setStatus('<div class="status">✅ ส่งข้อมูลกลับไปที่ฟอร์มแล้ว กำลังปิดหน้านี้...</div>');
+    setTimeout(() => window.close(), 700);
+  } else {
+    setStatus('<div class="error-box">ไม่พบหน้าต้นทาง (opener) กรุณาเปิดหน้านี้จากปุ่มในฟอร์มบันทึกซื้อเท่านั้น</div>');
+  }
+};
+</script>
+</body>
+</html>
