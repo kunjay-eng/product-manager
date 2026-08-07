@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="th">
 <head>
@@ -187,10 +188,10 @@ const RESPONSE_SCHEMA = {
           product_name: { type: "STRING" },
           product_url: { type: "STRING", description: "ลิงก์สินค้า ถ้ามีแสดงในภาพ ปกติจะไม่มี เว้นว่างได้" },
           qty: { type: "NUMBER" },
-          unit_price: { type: "NUMBER", description: "ราคาต่อชิ้น ถ้าคำนวณ/อ่านได้ชัดเจน ไม่แน่ใจให้เว้นว่าง" },
-          total_price: { type: "NUMBER", description: "ราคารวมของรายการนี้ (บาท) ตามที่แสดงในภาพ" }
+          unit_price: { type: "NUMBER", description: "ราคาต่อชิ้นของสินค้ารายการนี้ (บาท) — ในสกรีนช็อต Shopee/Lazada ตัวเลขราคาที่แสดงต่อท้ายแต่ละรายการสินค้า (เช่น ฿54) มักเป็นราคาต่อชิ้นเสมอ ไม่ใช่ราคารวมของบรรทัด ให้ใส่ตัวเลขนั้นตรงนี้" },
+          total_price: { type: "NUMBER", description: "ราคารวมของรายการนี้ = unit_price คูณ qty ให้คำนวณเอง (เว้นแต่ภาพนั้นแสดงราคารวมแยกไว้ชัดเจนต่างหากจากราคาต่อชิ้น ก็ให้อ่านตามที่เห็นแทน)" }
         },
-        required: ["product_name", "qty", "total_price"]
+        required: ["product_name", "qty", "unit_price", "total_price"]
       }
     }
   },
@@ -204,13 +205,16 @@ const PROMPT = `คุณกำลังดูภาพหน้าจอ "ร�
 ให้รวมข้อมูลจากทุกภาพเป็นคำสั่งซื้อเดียวกัน แล้วดึงข้อมูลออกมาเป็น JSON ตาม schema ที่กำหนด
 - product_name: ใช้ชื่อสินค้าที่เจาะจงที่สุดที่เห็น (รวมสี/รุ่น/ตัวเลือกถ้ามี) ไม่ใช่ชื่อหมวดกว้างๆ
 - qty: จำนวนที่ซื้อของรายการนั้น (ตัวเลขหลัง x)
-- total_price: ราคารวมของบรรทัดนั้นตามตัวเลขที่แสดงในภาพ (ไม่ต้องคำนวณเอง อ่านตามที่เห็น)
-- shipping / other_cost / discounts: ดึงเฉพาะกรณีที่มีบรรทัดแยกแสดงชัดเจนในภาพสรุปยอด (เช่น "ค่าจัดส่ง", "ส่วนลด") ถ้าภาพที่ให้มาไม่มีส่วนสรุปยอดแบบนี้ ห้ามเดา ให้ใส่ 0 หรือ array ว่าง
+- unit_price / total_price: สังเกตว่าในรายการสินค้าแบบ Shopee/Lazada ตัวเลขราคาที่แสดงต่อท้ายแต่ละบรรทัด (เช่น "฿54") คือ "ราคาต่อชิ้น" ไม่ใช่ราคารวมของบรรทัด แม้จำนวนจะเป็น x2, x3 ก็ตาม ให้ใส่ตัวเลขนั้นเป็น unit_price แล้วคำนวณ total_price = unit_price × qty เอง (ห้ามเอาราคาต่อชิ้นไปใส่ใน total_price เฉยๆ โดยไม่คูณจำนวน) — มีเพียงบางกรณีเท่านั้นที่ภาพแสดงราคารวมของบรรทัดแยกไว้ต่างหากชัดเจน (มีทั้งราคาต่อชิ้นและราคารวมคนละตัวเลข) ให้อ่าน total_price ตามที่เห็นแทนการคำนวณ
+- shipping / other_cost / discounts: อยู่ในส่วน "สรุปคำสั่งซื้อ" ท้ายๆ ภาพ (ถ้ามี) ให้แยกแยะด้วยเครื่องหมายหน้าตัวเลข:
+  - บรรทัดที่ตัวเลข "ไม่มีเครื่องหมายลบ" นำหน้า เช่น "ค่าจัดส่ง ฿100" → ใส่ใน shipping (ถ้ามีค่าธรรมเนียมอื่นที่ไม่ใช่ค่าจัดส่งและไม่ใช่ส่วนลด ใส่ใน other_cost)
+  - บรรทัดที่ตัวเลข "มีเครื่องหมายลบ (-)" นำหน้า เช่น "ส่วนลดค่าจัดส่ง -฿100", "ใช้โค้ด Shopee แล้ว -฿341" → ถือเป็นส่วนลดทั้งหมด ใส่เป็นรายการใน discounts (name = ข้อความบรรทัดนั้น, amount = ตัวเลขแบบเป็นค่าบวก เช่น 100, 341)
+  - ถ้าภาพที่ให้มาไม่มีส่วนสรุปยอดแบบนี้เลย ห้ามเดา ให้ shipping/other_cost เป็น 0 และ discounts เป็น array ว่าง
 - store_name: มักอยู่ "บนสุด" ของหน้ารายละเอียดคำสั่งซื้อ เสมอให้ตรวจดูส่วนบนสุดของทุกภาพก่อนก่อนสรุปว่าไม่มี
   - บางร้านมีป้าย/แบดจ์นำหน้าชื่อร้าน เช่น "ร้านแนะนำดีเยี่ยม", "Preferred", "Mall" — ถ้าเจอแบบนี้ ให้เอาเฉพาะชื่อร้านที่ตามหลังป้าย ไม่เอาข้อความป้ายมาเป็นชื่อร้าน (เช่น "ร้านแนะนำดีเยี่ยม RealWoodPC" → ชื่อร้านคือ "RealWoodPC")
   - บางร้านไม่มีป้ายใดๆ เลย โชว์ชื่อร้านตรงๆ อยู่แถวบนสุด (อาจมีไอคอนร้าน/โลโก้อยู่ข้างๆ หรือมีปุ่ม "เข้าดูร้านค้า"/"ดูร้าน" อยู่ใกล้ๆ) ให้ใช้ชื่อนั้นเป็น store_name ได้เลย
   - ถ้าหาไม่เจอจริงๆ ทั้งสองแบบ (มีแต่รายการสินค้ากับเลขคำสั่งซื้อ ไม่มีส่วนหัวร้านค้าเลยในทุกภาพที่ให้มา) ให้เว้นว่างไว้ ห้ามเดาจากชื่อสินค้าหรือแบรนด์สินค้า
-- ถ้ารายการไหน "คืนเงินแล้ว" หรือถูกยกเลิก ให้ข้ามไม่ต้องใส่ในผลลัพธ์
+- ถ้ารายการสินค้าไหนมีข้อความกำกับว่า "คืนเงินแล้ว" หรือถูกยกเลิก ให้ตัดรายการนั้นออกทั้งหมด ห้ามใส่ในผลลัพธ์ items เด็ดขาด (ไม่ต้องนำราคาหรือจำนวนของรายการนั้นมารวมในการคำนวณอะไรทั้งสิ้น)
 - ห้ามเดาข้อมูลที่ไม่ปรากฏในภาพเด็ดขาด เว้นว่างไว้ดีกว่าเดา
 ตอบกลับเป็น JSON เท่านั้น`;
 
@@ -310,12 +314,19 @@ function itemRowHtml(idx, item){
         <div><label>หน่วยขาย</label><input type="text" id="riUnitSell-${idx}" value="ชิ้น"></div>
       </div>
 
-      <label>ราคาต่อชิ้น (ไม่บังคับ)</label>
+      <label>ราคาต่อชิ้น (ไม่บังคับ — กรอกแล้วคำนวณราคารวมให้อัตโนมัติ)</label>
       <input type="number" id="riUnitPrice-${idx}" value="${item.unit_price ?? ''}">
 
       <label>ราคาสินค้ารายการนี้ (บาท รวมทั้งจำนวนที่ซื้อ)</label>
-      <input type="number" id="riItemPrice-${idx}" value="${item.total_price ?? ''}">
+      <input type="number" id="riItemPrice-${idx}" value="${computeTotal(item)}">
     </div>`;
+}
+
+function computeTotal(item){
+  const qty = Number(item.qty) || 0;
+  const unit = Number(item.unit_price) || 0;
+  if (unit > 0 && qty > 0) return unit * qty;
+  return item.total_price ?? '';
 }
 
 function showReview(parsed){
@@ -347,6 +358,19 @@ function addItemRow(item){
   const row = div.firstElementChild;
   wrap.appendChild(row);
   row.querySelector('.rm-item').onclick = () => row.remove();
+
+  // คำนวณ "ราคาสินค้ารายการนี้" อัตโนมัติ = ราคาต่อชิ้น × จำนวนซื้อ เวลาผู้ใช้แก้ไขช่องใดช่องหนึ่ง
+  const qtyInput = document.getElementById(`riQty-${idx}`);
+  const unitInput = document.getElementById(`riUnitPrice-${idx}`);
+  const totalInput = document.getElementById(`riItemPrice-${idx}`);
+  const recalc = () => {
+    const q = parseFloat(qtyInput.value || '0');
+    const u = parseFloat(unitInput.value || '0');
+    if (u > 0 && q > 0) totalInput.value = (u * q).toFixed(2).replace(/\.00$/, '');
+  };
+  qtyInput.addEventListener('input', recalc);
+  unitInput.addEventListener('input', recalc);
+
   const copyBtn = row.querySelector('.copy-btn');
   copyBtn.onclick = async () => {
     const input = document.getElementById(copyBtn.dataset.target);
