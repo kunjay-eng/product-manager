@@ -417,64 +417,7 @@ function getStoreListByProductGroup(productGroupId) {
 
 
 
-/**
- * ============================================================
- * ⚠️ REPLACE — แทนที่ getProductGroupCards() เดิมใน Code.gs ด้วยฟังก์ชันนี้
- * (เพิ่มข้อมูล: วันที่ซื้อล่าสุด, ต้นทุน/หน่วยซื้อ, ต้นทุน/หน่วยขาย,
- *  ราคาขาย/หน่วยซื้อ, ราคาขาย/หน่วยขาย, ความถี่ในการซื้อ)
- * ============================================================
- */
-function getProductGroupCards(categoryId) {
-  const pgSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('ProductGroups');
-  const lastRow = pgSheet.getLastRow();
-  if (lastRow <= 1) return [];
 
-  const headers = pgSheet.getRange(1, 1, 1, pgSheet.getLastColumn()).getValues()[0];
-  const data = pgSheet.getRange(2, 1, lastRow - 1, pgSheet.getLastColumn()).getValues();
-
-  return data
-    .filter(row => row[headers.indexOf('category_id')] === categoryId && row[headers.indexOf('active')] !== false)
-    .map(row => {
-      const pg = {};
-      headers.forEach((h, i) => pg[h] = row[i]);
-
-      const purchases = getPurchasesByProductGroup(pg.id); // ใหม่ → เก่า, ไม่รวมที่ยกเลิก
-      const storeIds = new Set(purchases.map(p => p.store_id));
-      const latest = purchases[0];
-
-      const costPerSellUnit = latest ? latest.cost_per_unit : 0;
-      const costPerBuyUnit = latest ? Math.round((latest.net_cost / latest.qty_buy) * 100) / 100 : 0;
-      const unitBuy = latest ? latest.unit_buy : '';
-      const unitSell = latest ? latest.unit_sell : '';
-      const ratio = latest ? latest.ratio : 0;
-
-      const sellPricePerSellUnit = pg.current_sell_price || 0;
-      const sellPricePerBuyUnit = ratio ? Math.round(sellPricePerSellUnit * ratio * 100) / 100 : 0;
-
-      // ความถี่ในการซื้อ: ค่าเฉลี่ยจำนวนวันระหว่างการซื้อแต่ละครั้ง (ต้องมี ≥ 2 รายการ)
-      let purchaseFrequencyDays = null;
-      if (purchases.length >= 2) {
-        const datesAsc = purchases.map(p => new Date(p.date)).sort((a, b) => a - b);
-        let totalDays = 0;
-        for (let i = 1; i < datesAsc.length; i++) {
-          totalDays += (datesAsc[i] - datesAsc[i - 1]) / (1000 * 60 * 60 * 24);
-        }
-        purchaseFrequencyDays = Math.round(totalDays / (datesAsc.length - 1));
-      }
-
-      return {
-        id: pg.id, name: pg.name, image_url: pg.image_url,
-        last_purchase_date: latest ? latest.date : null,
-        cost_per_buy_unit: costPerBuyUnit, unit_buy: unitBuy,
-        cost_per_sell_unit: costPerSellUnit, unit_sell: unitSell,
-        sell_price_per_buy_unit: sellPricePerBuyUnit,
-        sell_price_per_sell_unit: sellPricePerSellUnit,
-        store_count: storeIds.size,
-        purchase_count: purchases.length,
-        purchase_frequency_days: purchaseFrequencyDays
-      };
-    });
-}
 
 
 /**
@@ -701,41 +644,6 @@ function getAllStores() {
   return data.filter(r => r[2] !== false).map(r => ({ id: r[0], name: r[1] }));
 }
 
-function getProductGroupDetail(productGroupId) {
-  const pricing = getPricingInfo(productGroupId);
-  const purchases = getPurchasesByProductGroup(productGroupId);
-  const latest = purchases[0];
-
-  const stores = getStoreListByProductGroup(productGroupId);
-
-  let cheapestId = null, expensiveId = null, latestId = null;
-  if (stores.length > 0) {
-    cheapestId = stores.reduce((min, s) => s.cost_per_sell_unit < min.cost_per_sell_unit ? s : min, stores[0]).store_id;
-    expensiveId = stores.reduce((max, s) => s.cost_per_sell_unit > max.cost_per_sell_unit ? s : max, stores[0]).store_id;
-    latestId = stores.reduce((lat, s) => new Date(s.last_purchase_date) > new Date(lat.last_purchase_date) ? s : lat, stores[0]).store_id;
-  }
-
-  const pgSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('ProductGroups');
-  const pgHeaders = pgSheet.getRange(1, 1, 1, pgSheet.getLastColumn()).getValues()[0];
-  const pgRow = pgSheet.getDataRange().getValues().find(r => r[0] === productGroupId);
-  if (!pgRow) throw new Error('ไม่พบกลุ่มสินค้านี้');
-  const urlIdx = pgHeaders.indexOf('product_url');
-
-  return {
-    ...pricing,
-    name: pgRow[2], image_url: pgRow[3], product_url: urlIdx !== -1 ? (pgRow[urlIdx] || '') : '',
-    cost_per_buy_unit: latest ? Math.round((latest.net_cost / latest.qty_buy) * 100) / 100 : 0,
-    unit_buy: latest ? latest.unit_buy : '',
-    unit_sell: latest ? latest.unit_sell : '',
-    stores: stores.map(s => ({
-      ...s,
-      is_cheapest: s.store_id === cheapestId,
-      is_most_expensive: s.store_id === expensiveId && expensiveId !== cheapestId,
-      is_latest: s.store_id === latestId
-    }))
-  };
-}
-
 
 /**5) เพิ่มฟังก์ชันใหม่ (สำหรับปุ่ม ✏️ แก้ไขลิงก์ทีหลัง)**
  * 
@@ -849,7 +757,7 @@ function _sheetData(sheetName){
 }
 function _col(headers, name){ return headers.indexOf(name); }
 
-function getMasterList(type){
+function getMasterList(type, categoryId){
   if (type === 'unit_buy' || type === 'unit_sell'){
     const unitType = type === 'unit_buy' ? 'buy' : 'sell';
     const { headers, data } = _sheetData('Units');
@@ -858,12 +766,16 @@ function getMasterList(type){
     const field = unitType === 'buy' ? 'unit_buy' : 'unit_sell';
     const pFieldIdx = _col(purchases.headers, field);
 
+    // นับการใช้งานล่วงหน้าครั้งเดียว แทนการ filter ทั้งชีตซ้ำทุกแถว (ของเดิมทำให้ช้ามากเมื่อข้อมูลเยอะ)
+    const usageCount = {};
+    purchases.data.forEach(p => {
+      const val = p[pFieldIdx];
+      usageCount[val] = (usageCount[val] || 0) + 1;
+    });
+
     return data
       .filter(r => r[typeIdx] === unitType)
-      .map(r => ({
-        id: r[idIdx], name: r[nameIdx], active: true,
-        usage: purchases.data.filter(p => p[pFieldIdx] === r[nameIdx]).length
-      }))
+      .map(r => ({ id: r[idIdx], name: r[nameIdx], active: true, usage: usageCount[r[nameIdx]] || 0 }))
       .sort((a, b) => a.name.localeCompare(b.name, 'th'));
   }
 
@@ -871,19 +783,35 @@ function getMasterList(type){
   if (!cfg) throw new Error('ประเภทข้อมูลไม่ถูกต้อง');
   const { headers, data } = _sheetData(cfg.sheet);
   const idIdx = _col(headers, 'id'), nameIdx = _col(headers, 'name'), activeIdx = _col(headers, 'active');
+  const catIdx = type === 'productGroup' ? _col(headers, 'category_id') : -1;
 
-  return data
-    .map(r => {
-      let usage = 0;
-      cfg.refs.forEach(ref => {
-        const refData = _sheetData(ref.sheet);
-        const fIdx = _col(refData.headers, ref.field);
-        usage += refData.data.filter(rr => rr[fIdx] === r[idIdx]).length;
-      });
-      return { id: r[idIdx], name: r[nameIdx], active: activeIdx !== -1 ? r[activeIdx] !== false : true, usage };
-    })
+  // ⚠️ จุดที่แก้: อ่านชีตอ้างอิงแต่ละอันแค่ "ครั้งเดียว" แล้วนับรวมไว้ล่วงหน้า
+  // ของเดิมอ่านทั้งชีต Purchases/PriceHistory ซ้ำใหม่ทุกแถวของ ProductGroups -> ช้ามาก (O(N×M))
+  const usageCount = {};
+  cfg.refs.forEach(ref => {
+    const refData = _sheetData(ref.sheet);
+    const fIdx = _col(refData.headers, ref.field);
+    refData.data.forEach(rr => {
+      const val = rr[fIdx];
+      usageCount[val] = (usageCount[val] || 0) + 1;
+    });
+  });
+
+  let rows = data;
+  if (type === 'productGroup' && categoryId){
+    rows = rows.filter(r => r[catIdx] === categoryId); // กรองตามหมวดที่เลือก (ใช้สำหรับข้อ 1)
+  }
+
+  return rows
+    .map(r => ({
+      id: r[idIdx], name: r[nameIdx],
+      active: activeIdx !== -1 ? r[activeIdx] !== false : true,
+      usage: usageCount[r[idIdx]] || 0,
+      category_id: catIdx !== -1 ? r[catIdx] : undefined
+    }))
     .sort((a, b) => a.name.localeCompare(b.name, 'th'));
 }
+
 
 function renameMaster(type, id, newName){
   newName = String(newName).trim();
@@ -1016,6 +944,77 @@ function mergeMaster(type, sourceIds, targetId){
 
   return { success: true, merged: sourceIds.length };
 }
+
+
+/* ============================================================
+   เพิ่มรายการใหม่ (หมวดสินค้า / ร้านค้า / หน่วย) + ย้ายกลุ่มสินค้าไปหมวดอื่นทีละหลายรายการ
+   วางต่อท้าย mergeMaster() ในไฟล์ Code.gs (อยู่ในโซนเดียวกับฟังก์ชัน master data อื่นๆ)
+   ============================================================ */
+
+function addMaster(type, name){
+  name = String(name).trim();
+  if (!name) throw new Error('กรุณากรอกชื่อ');
+
+  if (type === 'category'){
+    if (findExactMatch('Categories', name)) throw new Error('มีหมวดสินค้านี้อยู่แล้ว');
+    const id = findOrCreateCategory(name);
+    return { success: true, id };
+  }
+
+  if (type === 'store'){
+    if (findExactMatch('Stores', name)) throw new Error('มีร้านค้านี้อยู่แล้ว');
+    const id = findOrCreateStore(name);
+    return { success: true, id };
+  }
+
+  if (type === 'unit_buy' || type === 'unit_sell'){
+    const unitType = type === 'unit_buy' ? 'buy' : 'sell';
+    const { headers, data } = _sheetData('Units');
+    const nameIdx = _col(headers, 'name'), typeIdx = _col(headers, 'type');
+    const dup = data.find(r => r[typeIdx] === unitType && normalizeName(r[nameIdx]) === normalizeName(name));
+    if (dup) throw new Error('มีหน่วยนี้อยู่แล้ว');
+    const id = findOrCreateUnit(name, unitType);
+    return { success: true, id };
+  }
+
+  throw new Error('ประเภทนี้เพิ่มรายการใหม่ตรงนี้ไม่ได้ (กลุ่มสินค้าจะถูกสร้างอัตโนมัติตอนบันทึกการซื้อ)');
+}
+
+/**
+ * ย้ายกลุ่มสินค้า (ProductGroups) หลายรายการไปหมวดสินค้าปลายทางในคราวเดียว
+ * ข้ามรายการที่ชื่อชนกับกลุ่มสินค้าที่มีอยู่แล้วในหมวดปลายทาง (กันข้อมูลซ้ำ)
+ */
+function moveProductGroupsToCategory(ids, targetCategoryId){
+  if (!ids || ids.length === 0) throw new Error('ไม่มีรายการที่เลือก');
+  if (!targetCategoryId) throw new Error('กรุณาเลือกหมวดปลายทาง');
+
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('ProductGroups');
+  const { headers, data } = _sheetData('ProductGroups');
+  const idIdx = _col(headers, 'id'), catIdx = _col(headers, 'category_id'), nameIdx = _col(headers, 'name');
+
+  // กันชื่อชนกับกลุ่มสินค้าที่มีอยู่แล้วในหมวดปลายทาง
+  const targetNames = new Set(
+    data.filter(r => r[catIdx] === targetCategoryId).map(r => normalizeName(r[nameIdx]))
+  );
+
+  let moved = 0, skipped = 0;
+  ids.forEach(id => {
+    const rowIndex = data.findIndex(r => r[idIdx] === id);
+    if (rowIndex === -1) return;
+    if (data[rowIndex][catIdx] === targetCategoryId) return; // อยู่หมวดเดียวกันอยู่แล้ว ข้าม
+
+    const name = data[rowIndex][nameIdx];
+    if (targetNames.has(normalizeName(name))) { skipped++; return; }
+
+    sheet.getRange(rowIndex + 2, catIdx + 1).setValue(targetCategoryId);
+    targetNames.add(normalizeName(name));
+    moved++;
+  });
+
+  return { success: true, moved, skipped };
+}
+
+
 
 
 /* ============================================================
@@ -1966,6 +1965,8 @@ function getDashboardData(year, month){
   };
 }
 
+
+
 ## Index.html
 <!DOCTYPE html>
 <html>
@@ -2406,11 +2407,143 @@ function getDashboardData(year, month){
 .modal-actions{ display:flex; gap:10px; }
 .modal-actions .btn{ padding:12px; font-size:14.5px; }
 
+
+
+
+
+  
+.select-bar{
+ position:fixed; 
+ left:50%; 
+ bottom:100px; 
+ transform:translateX(-50%);
+  //right: 84px;
+ 
+  z-index: 99;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: var(--ink);
+  color: #fff;
+  border-radius: 18px;
+  padding: 10px 12px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+  max-width: calc(150vw - 96px);
+  box-sizing: border-box;
+  flex-wrap: wrap;          /* ถ้าล้นให้ตกบรรทัดแทนล้นออกจอ */
+}
+
+.select-bar > span{
+  font-size: 12.5px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.select-bar > div{
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.select-bar button{
+  border: none;
+  border-radius: 560px;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 8px 12px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.select-bar .cancel-select{
+  background: rgba(255,255,255,0.15);
+  color: #fff;
+}
+
+.select-bar button:not(.cancel-select){
+  background: var(--orange);
+  color: #fff;
+}
+
+.select-fab{
+  position: fixed;
+  right: 16px;
+  bottom: 140px;
+  z-index: 56;
+  background: var(--ink);
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  padding: 12px 18px;
+  font-size: 13.5px;
+  font-weight: 700;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.28);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+.select-fab .count-badge{
+  background: var(--orange);
+  color: #fff;
+  border-radius: 999px;
+  min-width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11.5px;
+  padding: 0 5px;
+}
+.select-sheet-overlay{
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.35);
+  z-index: 57;
+  display: flex;
+  align-items: flex-end;
+}
+.select-sheet{
+  width: 100%;
+  background: var(--card);
+  border-radius: 20px 20px 0 0;
+  padding: 18px 16px 26px;
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.2);
+}
+.select-sheet-header{
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+  font-weight: 700;
+  font-size: 15px;
+}
+.select-sheet-header .close-x{
+  border: none;
+  background: none;
+  font-size: 20px;
+  color: var(--ink-soft);
+}
+.select-sheet-actions{
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.select-sheet-actions button{
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 13px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.select-sheet-actions .primary-move{ background: var(--orange); color: #fff; }
+.select-sheet-actions .primary-merge{ background: var(--mint-dk); color: #fff; }
+.select-sheet-actions .cancel-select{ background: var(--bg); color: var(--ink-soft); border: 1.5px solid var(--line); }
+
+
 </style>
-
-
-
-
 
 
 
@@ -2744,35 +2877,37 @@ async function renderHome(){
 </div>
 `
 });
-   document.getElementById('scanQrBtn').onclick = () => openQRScannerExternal();
-
-   document.getElementById('homeSearch').addEventListener('input', e => {
+  document.getElementById('scanQrBtn').onclick = () => openQRScannerExternal();
+  document.getElementById('homeSearch').addEventListener('input', e => {
     homeState.keyword = e.target.value;
     renderProductGrid();
   });
 
-content.innerHTML = `<div id="homeSummary"></div><div id="productListWrap"><div class="spinner"></div></div>`;
-loadHomeSummary();
-const categories = await gs('getCategories');
 
+  content.innerHTML = `<div id="homeSummary"></div><div id="productListWrap"><div class="spinner"></div></div>`;
+  loadHomeSummary();
+
+  // ดึงหมวดหมู่ + การ์ดสินค้า "พร้อมกัน" แทนรอทีละอย่าง
+  const [categories] = await Promise.all([ gs('getCategories'), renderProductGrid() ]);
   const tabsEl = document.getElementById('catTabs');
-  tabsEl.innerHTML = '';
+
+   tabsEl.innerHTML = '';
   tabsEl.appendChild(el(`<button class="tab ${!homeState.categoryId ? 'active' : ''}" data-id="">ทั้งหมด</button>`));
   categories.forEach(c => {
     tabsEl.appendChild(el(`<button class="tab ${homeState.categoryId===c.id?'active':''}" data-id="${c.id}">${c.name}</button>`));
   });
+
   tabsEl.querySelectorAll('.tab').forEach(btn => {
     btn.onclick = () => {
       homeState.categoryId = btn.dataset.id || null;
       tabsEl.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
       btn.classList.add('active');
-      renderProductGrid();
+          renderProductGrid();
     };
   });
-
   window._categories = categories;
-  await renderProductGrid();
 }
+
 
 /* ============================================================
    ⚖️ ปุ่มลอยเทียบราคา — เทียบสินค้าที่ยังไม่ได้ซื้อ กับราคาที่มีอยู่ในระบบ
@@ -2875,13 +3010,8 @@ function initPriceCompareFab(){
 async function renderProductGrid(){
   const wrap = document.getElementById('productListWrap');
   wrap.innerHTML = `<div class="spinner"></div>`;
-  const cats = homeState.categoryId ? [homeState.categoryId] : (window._categories||[]).map(c=>c.id);
-  if (cats.length === 0){
-    wrap.innerHTML = emptyState('📦','ยังไม่มีหมวดสินค้า','กด + บันทึกการซื้อ เพื่อเริ่มต้น');
-    return;
-  }
- let cards = await gs('getProductGroupCardsBatch', homeState.categoryId ? [homeState.categoryId] : null);
 
+  let cards = await gs('getProductGroupCardsBatch', homeState.categoryId ? [homeState.categoryId] : null);
 
   if (homeState.keyword.trim()){
     const kw = homeState.keyword.trim().toLowerCase();
@@ -2898,13 +3028,25 @@ async function renderProductGrid(){
 }
 
 
+
 async function loadHomeSummary(){
   const wrap = document.getElementById('homeSummary');
   if (!wrap) return;
   try{
     const s = await gs('getMonthlySavings');
-    if (s.purchase_count === 0){ wrap.innerHTML = ''; return; }
     wrap.innerHTML = '';
+
+    // เดือนนี้ยังไม่มีรายการซื้อ — ยังคงต้องมีทางเข้า Dashboard เสมอ
+    if (s.purchase_count === 0){
+      const card = el(`
+        <div class="info-block" style="margin-bottom:14px; cursor:pointer; text-align:center; color:var(--ink-soft);">
+          <div style="font-size:13.5px;">📊 เดือนนี้ยังไม่มีรายการซื้อ — ดู Dashboard ›</div>
+        </div>`);
+      card.onclick = () => go('#/dashboard');
+      wrap.appendChild(card);
+      return;
+    }
+
     const card = el(`
     <div>
       <div class="info-block" style="margin-bottom:14px; cursor:pointer;">
@@ -3680,26 +3822,47 @@ async function renderAddPurchase(){
     return allocs;
   }
 
-  function updateAllocPreview(){
-    const items = getItemRows().filter(it => it.item_price > 0);
-    const preview = document.getElementById('allocPreview');
-    if (items.length === 0){ preview.innerHTML = ''; return; }
+ function updateAllocPreview(){
+  const items = getItemRows().filter(it => it.item_price > 0);
+  const preview = document.getElementById('allocPreview');
+  if (items.length === 0){ preview.innerHTML = ''; return; }
 
-    const subtotal = items.reduce((s, it) => s + it.item_price, 0);
-    const shipping = parseFloat(document.getElementById('fShipping').value || '0');
-    const other = parseFloat(document.getElementById('fOther').value || '0');
-    const discountTotal = collectDiscounts('discountList', subtotal).reduce((s, d) => s + Number(d.amount || 0), 0);
+  const subtotal = items.reduce((s, it) => s + it.item_price, 0);
+  const shipping = parseFloat(document.getElementById('fShipping').value || '0');
+  const other = parseFloat(document.getElementById('fOther').value || '0');
+  const discountTotal = collectDiscounts('discountList', subtotal).reduce((s, d) => s + Number(d.amount || 0), 0);
 
-    const shipAlloc = allocateProportional(items, shipping);
-    const otherAlloc = allocateProportional(items, other);
-    const discAlloc = allocateProportional(items, discountTotal);
+  const shipAlloc = allocateProportional(items, shipping);
+  const otherAlloc = allocateProportional(items, other);
+  const discAlloc = allocateProportional(items, discountTotal);
 
-    preview.innerHTML = '📊 ตัวอย่างการหารสัดส่วน (ตามราคาสินค้าแต่ละรายการ):<br>' +
-      items.map((it, i) => {
-        const net = it.item_price + shipAlloc[i] + otherAlloc[i] - discAlloc[i];
-        return `${it.product_group_name || 'สินค้า #' + (i+1)}: ฿${it.item_price} + ส่ง ฿${shipAlloc[i]} + อื่นๆ ฿${otherAlloc[i]} − ลด ฿${discAlloc[i]} = <b>฿${Math.round(net*100)/100}</b>`;
-      }).join('<br>');
-  }
+  const fmt = n => (Math.round(n * 100) / 100).toLocaleString('th-TH', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+
+  let grandTotal = 0;
+  const rows = items.map((it, i) => {
+    const net = it.item_price + shipAlloc[i] + otherAlloc[i] - discAlloc[i];
+    grandTotal += net;
+    return `
+      <div style="display:flex; justify-content:space-between; align-items:baseline; gap:10px; padding:8px 0; border-bottom:1px dashed var(--line-dash);">
+        <div style="flex:1; min-width:0;">
+          <div style="font-weight:600; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${it.product_group_name || 'สินค้า #' + (i+1)}</div>
+          <div style="font-size:11px; color:var(--ink-soft); margin-top:2px;">
+            ฿${fmt(it.item_price)} + ส่ง ฿${fmt(shipAlloc[i])} + อื่นๆ ฿${fmt(otherAlloc[i])} − ลด ฿${fmt(discAlloc[i])}
+          </div>
+        </div>
+        <div style="flex-shrink:0; font-weight:700; color:var(--orange-dk); font-size:14px;">฿${fmt(net)}</div>
+      </div>`;
+  }).join('');
+
+  preview.innerHTML = `
+    <div style="font-weight:700; color:var(--ink); margin-bottom:6px;">📊 สรุปการหารสัดส่วนต้นทุนต่อชิ้น</div>
+    ${rows}
+    <div style="display:flex; justify-content:space-between; align-items:baseline; padding-top:10px; margin-top:2px;">
+      <div style="font-weight:700; color:var(--ink);">รวมยอดสุทธิทั้งหมด</div>
+      <div style="font-weight:800; color:var(--mint-dk); font-size:16px;">฿${fmt(grandTotal)}</div>
+    </div>`;
+}
+
 
   document.getElementById('submitBtn').onclick = async () => {
     const items = getItemRows();
@@ -3906,14 +4069,14 @@ async function renderStoreRanking(){
    content.appendChild(row);
   });
 
-  const switchBtn = el(`<button class="btn btn-ghost" style="margin-top:16px;">💡 สินค้าที่ควรเปลี่ยนร้าน</button>`);
+  const switchBtn = el(`<button class="btn btn-ghost" style="margin-top:16px;">💡สินค้าควรเปลี่ยนร้าน</button>`);
   switchBtn.onclick = () => go('#/switch-store');
   content.appendChild(switchBtn);
 }
 
 
 async function renderSwitchStore(){
-  setTopbar({ title: '💡 ควรเปลี่ยนร้าน', showBack: true });
+  setTopbar({ title: '💡ควรเปลี่ยนร้าน', showBack: true });
   content.innerHTML = `<div class="spinner"></div>`;
 
   const list = await gs('getSwitchStoreSuggestions');
@@ -4021,12 +4184,12 @@ async function renderDashboard(){
 
   const linkRow = el(`<div style="display:flex; gap:8px; margin-top:14px;"></div>`);
   if (d.reorder_count > 0){
-    const btn = el(`<button class="btn btn-ghost" style="flex:1;">⏰ ควรซื้อเพิ่ม (${d.reorder_count})</button>`);
+    const btn = el(`<button class="btn btn-ghost" style="flex:1;">⏰ควรซื้อเพิ่ม (${d.reorder_count})</button>`);
     btn.onclick = () => go('#/home');
     linkRow.appendChild(btn);
   }
   if (d.switch_suggestion_count > 0){
-    const btn = el(`<button class="btn btn-ghost" style="flex:1;">💡 ควรเปลี่ยนร้าน (${d.switch_suggestion_count})</button>`);
+    const btn = el(`<button class="btn btn-ghost" style="flex:1;">💡ควรเปลี่ยนร้าน (${d.switch_suggestion_count})</button>`);
     btn.onclick = () => go('#/switch-store');
     linkRow.appendChild(btn);
   }
@@ -4048,66 +4211,248 @@ const MASTER_TYPES = [
   { key:'users',        label:'👤 ผู้ใช้งาน' }
 ];
 
+
+
 async function renderMaster(){
+
+  document.querySelectorAll('.select-bar, .select-fab').forEach(b => b.remove()); // ← เพิ่มบรรทัดนี้
+
+
   setTopbar({ title:'จัดการข้อมูล', showBack:true, extra:`<div class="tabs" id="masterTabs"></div>` });
 
   const tabsEl = document.getElementById('masterTabs');
   MASTER_TYPES.forEach(t => {
     const btn = el(`<button class="tab ${masterState.type===t.key?'active':''}">${t.label}</button>`);
-    btn.onclick = () => { masterState.type = t.key; masterState.selectMode = false; masterState.selectedIds = new Set(); renderMaster(); };
+    btn.onclick = () => {
+      masterState.type = t.key; masterState.selectMode = false; masterState.selectedIds = new Set();
+      masterState.categoryFilter = null; masterState.categories = null;
+      renderMaster();
+    };
     tabsEl.appendChild(btn);
   });
 
   content.innerHTML = `<div class="spinner"></div>`;
-  await renderMasterList();
+  if (masterState.type === 'productGroup' && !masterState.categories){
+    masterState.categories = await gs('getCategories');
+  }
+  await refreshMasterList();
 }
 
-async function renderMasterList(){
-  document.querySelectorAll('.select-bar').forEach(b => b.remove());
+async function refreshMasterList(){
+  document.querySelectorAll('.select-bar, .select-fab').forEach(b => b.remove());
+
   if (masterState.type === 'users'){ await renderUsersList(); return; }
 
-  const list = await gs('getMasterList', masterState.type);
+  content.innerHTML = `<div class="spinner"></div>`; // โชว์สถานะโหลดทุกครั้ง กันหน้าดูเหมือนค้าง
+
+  const isProductGroup = masterState.type === 'productGroup';
+  const list = isProductGroup
+    ? await gs('getMasterList', 'productGroup', masterState.categoryFilter)
+    : await gs('getMasterList', masterState.type);
+
   content.innerHTML = '';
 
-const actionRow = el(`<div style="display:flex; justify-content:${masterState.type === 'store' ? 'space-between' : 'flex-end'}; margin-bottom:10px; gap:8px;">
-  ${masterState.type === 'store' ? `<button class="btn btn-ghost" style="width:auto; padding:8px 16px; font-size:13px;" id="storeRankingBtn">🏆 ดูอันดับร้าน</button>` : ''}
-  <button class="btn btn-ghost" style="width:auto; padding:8px 16px; font-size:13px;" id="toggleSelectBtn">
-    ${masterState.selectMode ? '✕ ยกเลิกเลือก' : '🔗 เลือกเพื่อรวมรายการซ้ำ'}
-  </button>
-</div>`);
-content.appendChild(actionRow);
-document.getElementById('toggleSelectBtn').onclick = () => {
-  masterState.selectMode = !masterState.selectMode;
-  masterState.selectedIds = new Set();
-  renderMasterList();
-};
-const rankBtn = document.getElementById('storeRankingBtn');
-if (rankBtn) rankBtn.onclick = () => go('#/store-ranking');
+  // 🗂️ ข้อ 1: แท็บกลุ่มสินค้า — ให้เลือกหมวดก่อน ค่อยเลือกสินค้าที่จะย้าย/รวม
+  if (isProductGroup){
+    const catFilterWrap = el(`<div class="tabs" style="margin-bottom:10px;"></div>`);
+    catFilterWrap.appendChild(el(`<button class="tab ${!masterState.categoryFilter ? 'active' : ''}" data-id="">ทั้งหมด</button>`));
+    (masterState.categories || []).forEach(c => {
+      catFilterWrap.appendChild(el(`<button class="tab ${masterState.categoryFilter===c.id?'active':''}" data-id="${c.id}">${c.name}</button>`));
+    });
+    catFilterWrap.querySelectorAll('.tab').forEach(btn => {
+      btn.onclick = () => {
+        masterState.categoryFilter = btn.dataset.id || null;
+        masterState.selectMode = false; masterState.selectedIds = new Set();
+        refreshMasterList();
+      };
+    });
+    content.appendChild(catFilterWrap);
+  }
 
+  const selectLabel = masterState.selectMode
+    ? '✕ ยกเลิกเลือก'
+    : (isProductGroup ? '🔗 เลือกเพื่อรวม/ย้ายหมวด' : '🔗 เลือกเพื่อรวมรายการซ้ำ');
+
+  const actionRow = el(`<div style="display:flex; justify-content:${masterState.type === 'store' ? 'space-between' : 'flex-end'}; margin-bottom:10px; gap:8px;">
+    ${masterState.type === 'store' ? `<button class="btn btn-ghost" style="width:auto; padding:8px 16px; font-size:13px;" id="storeRankingBtn">🏆 ดูอันดับร้าน</button>` : ''}
+    <button class="btn btn-ghost" style="width:auto; padding:8px 16px; font-size:13px;" id="toggleSelectBtn">${selectLabel}</button>
+  </div>`);
+  content.appendChild(actionRow);
+
+  document.getElementById('toggleSelectBtn').onclick = () => {
+    masterState.selectMode = !masterState.selectMode;
+    masterState.selectedIds = new Set();
+    refreshMasterList();
+  };
+
+  const rankBtn = document.getElementById('storeRankingBtn');
+  if (rankBtn) rankBtn.onclick = () => go('#/store-ranking');
+
+  if (masterState.type === 'category' && !masterState.selectMode){
+    const addBlock = el(`
+      <div class="info-block" style="margin-bottom:14px;">
+        <div class="info-block-title">➕ เพิ่มหมวดสินค้า</div>
+        <div class="field" style="display:flex; gap:8px;">
+          <input id="newCategoryName" placeholder="ชื่อหมวดสินค้า เช่น เครื่องเขียน" style="flex:1;">
+          <button class="btn btn-primary" id="addCategoryBtn" style="width:auto; padding:0 18px;">เพิ่ม</button>
+        </div>
+      </div>`);
+    content.appendChild(addBlock);
+
+    const nameInput = document.getElementById('newCategoryName');
+    const doAdd = async () => {
+      const name = nameInput.value.trim();
+      if (!name){ toast('กรุณากรอกชื่อหมวดสินค้า'); return; }
+      const btn = document.getElementById('addCategoryBtn');
+      btn.disabled = true;
+      try{
+        await gs('addMaster', 'category', name);
+        toast('เพิ่มหมวดสินค้าแล้ว');
+        masterState.categories = null; // เพิ่มหมวดใหม่แล้ว ล้าง cache ให้แท็บกลุ่มสินค้าดึงใหม่
+        refreshMasterList();
+      } catch(e){ toast(e.message || 'เพิ่มไม่สำเร็จ'); }
+      finally { btn.disabled = false; }
+    };
+    document.getElementById('addCategoryBtn').onclick = doAdd;
+    nameInput.addEventListener('keydown', ev => { if (ev.key === 'Enter') doAdd(); });
+  }
 
   if (list.length === 0){
-    content.appendChild(el(emptyState('📁','ยังไม่มีข้อมูล','กด + บันทึกการซื้อ เพื่อเริ่มสร้างข้อมูล')));
+    content.appendChild(el(emptyState('📁', isProductGroup && masterState.categoryFilter ? 'ไม่มีกลุ่มสินค้าในหมวดนี้' : 'ยังไม่มีข้อมูล', 'กด + บันทึกการซื้อ เพื่อเริ่มสร้างข้อมูล')));
     return;
   }
 
   list.forEach(item => content.appendChild(masterRow(item)));
 
-  if (masterState.selectMode && masterState.selectedIds.size >= 2){
-    const bar = el(`
-      <div class="select-bar">
-        <span>เลือกแล้ว ${masterState.selectedIds.size} รายการ</span>
-        <div style="display:flex; gap:6px;">
-          <button class="cancel-select" id="cancelSelectBtn">ยกเลิก</button>
-          <button id="doMergeBtn">รวมรายการ</button>
-        </div>
-      </div>`);
-    document.body.appendChild(bar);
-    document.getElementById('cancelSelectBtn').onclick = () => {
-      masterState.selectMode = false; masterState.selectedIds = new Set(); renderMasterList();
-    };
-    document.getElementById('doMergeBtn').onclick = () => { renderMergePicker(); };
+   if (masterState.selectMode && masterState.selectedIds.size >= 1){
+    const canMerge = masterState.selectedIds.size >= 2;
+    const fab = el(`
+      <button class="select-fab">
+        📋 จัดการที่เลือก <span class="count-badge">${masterState.selectedIds.size}</span>
+      </button>`);
+    fab.onclick = () => openSelectSheet(isProductGroup, canMerge);
+    document.body.appendChild(fab);
   }
 }
+
+function openSelectSheet(isProductGroup, canMerge){
+  const overlay = el(`
+    <div class="select-sheet-overlay">
+      <div class="select-sheet">
+        <div class="select-sheet-header">
+          <span>เลือกแล้ว ${masterState.selectedIds.size} รายการ</span>
+          <button class="close-x">✕</button>
+        </div>
+        <div class="select-sheet-actions">
+          ${isProductGroup ? `<button class="primary-move">📂 ย้ายไปหมวดอื่น</button>` : ''}
+          ${canMerge ? `<button class="primary-merge">รวมรายการ</button>` : ''}
+          <button class="cancel-select">ยกเลิกการเลือกทั้งหมด</button>
+        </div>
+      </div>
+    </div>`);
+
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+  overlay.querySelector('.close-x').onclick = () => overlay.remove();
+
+  const moveBtn = overlay.querySelector('.primary-move');
+  if (moveBtn) moveBtn.onclick = () => {
+    overlay.remove();
+    renderMovePicker().catch(err => { console.error(err); toast('เปิดหน้าย้ายหมวดไม่สำเร็จ: ' + (err.message||err)); });
+  };
+  const mergeBtn = overlay.querySelector('.primary-merge');
+  if (mergeBtn) mergeBtn.onclick = () => {
+    overlay.remove();
+    renderMergePicker().catch(err => { console.error(err); toast('เปิดหน้ารวมรายการไม่สำเร็จ: ' + (err.message||err)); });
+  };
+  overlay.querySelector('.cancel-select').onclick = () => {
+    masterState.selectMode = false; masterState.selectedIds = new Set();
+    overlay.remove();
+    refreshMasterList();
+  };
+
+  document.body.appendChild(overlay);
+}
+
+
+
+/* ============================================================
+   📂 ย้ายกลุ่มสินค้าไปหมวดอื่นทีละหลายรายการ
+   วางต่อท้ายฟังก์ชัน renderMergePicker() เดิม
+   ============================================================ */
+async function renderMovePicker(){
+  document.querySelectorAll('.select-bar').forEach(b => b.remove());
+  setTopbar({ title:'ย้ายไปหมวดสินค้าอื่น', showBack:true });
+  content.innerHTML = `<div class="spinner"></div>`; // ← เพิ่มบรรทัดนี้
+  const ids = Array.from(masterState.selectedIds);
+  const categories = await gs('getMasterList', 'category');
+
+  content.innerHTML = `<div style="margin-bottom:14px; color:var(--ink-soft); font-size:14px;">
+    เลือกหมวดสินค้าปลายทาง — กลุ่มสินค้าที่เลือกไว้ ${ids.length} รายการ จะถูกย้ายไปหมวดนี้ทั้งหมด
+    (ถ้ารายการไหนชื่อชนกับที่มีอยู่แล้วในหมวดปลายทาง จะข้ามรายการนั้นให้อัตโนมัติ)
+  </div>`;
+
+  let picked = categories.length > 0 ? categories[0].id : null;
+  const listWrap = el(`<div></div>`);
+  content.appendChild(listWrap);
+
+  function draw(){
+    listWrap.innerHTML = '';
+    categories.forEach(c => {
+      const row = el(`
+        <div class="merge-target-row ${picked === c.id ? 'picked' : ''}">
+          <div class="radio-dot ${picked === c.id ? 'on' : ''}"></div>
+          <div style="flex:1;"><div style="font-weight:700;">${c.name}</div><div class="row-sub">มีกลุ่มสินค้าอยู่แล้ว ${c.usage} รายการ</div></div>
+        </div>`);
+      row.onclick = () => { picked = c.id; draw(); };
+      listWrap.appendChild(row);
+    });
+  }
+  draw();
+
+ const confirmBtn = el(`<button class="btn btn-mint" style="margin-top:10px;">✔ ย้ายรายการ</button>`);
+const confirmBtnLabel = confirmBtn.textContent;
+confirmBtn.onclick = async () => {
+  if (!picked){ toast('กรุณาเลือกหมวดปลายทาง'); return; }
+  confirmBtn.disabled = true;
+  confirmBtn.innerHTML = `<span class="btn-spinner"></span> กำลังย้าย...`;
+  try{
+    const res = await gs('moveProductGroupsToCategory', ids, picked);
+    toast(res.skipped > 0
+      ? `ย้ายแล้ว ${res.moved} รายการ (ข้าม ${res.skipped} รายการที่ชื่อซ้ำ)`
+      : `ย้ายแล้ว ${res.moved} รายการ`);
+    masterState.selectMode = false; masterState.selectedIds = new Set();
+    renderMaster();
+  } catch(err){
+    console.error('moveProductGroupsToCategory error:', err);
+    toast('ย้ายไม่สำเร็จ: ' + (err.message || err));
+  } finally {
+    confirmBtn.textContent = confirmBtnLabel; confirmBtn.disabled = false;
+  }
+};
+content.appendChild(confirmBtn);
+
+
+}
+
+const BTN_SPINNER_CSS = `
+<style>
+.btn-spinner{
+  display:inline-block; width:14px; height:14px; margin-right:6px;
+  border:2px solid rgba(255,255,255,.5); border-top-color:#fff;
+  border-radius:50%; vertical-align:-2px; animation:btnspin .7s linear infinite;
+}
+@keyframes btnspin{ to{ transform:rotate(360deg); } }
+</style>`;
+
+
+
+if (!document.getElementById('btnSpinnerStyleTag')){
+  const tag = document.createElement('div');
+  tag.id = 'btnSpinnerStyleTag';
+  tag.innerHTML = BTN_SPINNER_CSS;
+  document.head.appendChild(tag.firstElementChild);
+}
+
 
 function masterRow(item){
   const isSelected = masterState.selectedIds.has(item.id);
@@ -4120,7 +4465,7 @@ function masterRow(item){
     row.onclick = () => {
       if (masterState.selectedIds.has(item.id)) masterState.selectedIds.delete(item.id);
       else masterState.selectedIds.add(item.id);
-      renderMasterList();
+      refreshMasterList();
     };
     return row;
   }
@@ -4139,15 +4484,15 @@ function masterRow(item){
     const commit = async () => {
       if (done) return; done = true;
       const newName = input.value.trim();
-      if (!newName || newName === item.name){ renderMasterList(); return; }
+      if (!newName || newName === item.name){ refreshMasterList(); return; }
       try{
         await gs('renameMaster', masterState.type, item.id, newName);
         toast('บันทึกแล้ว');
-      } finally { renderMasterList(); }
+      } finally { refreshMasterList(); }
     };
     input.addEventListener('keydown', ev => {
       if (ev.key === 'Enter') commit();
-      if (ev.key === 'Escape'){ done = true; renderMasterList(); }
+      if (ev.key === 'Escape'){ done = true; refreshMasterList(); }
     });
     input.addEventListener('blur', commit);
   };
@@ -4161,7 +4506,7 @@ function masterRow(item){
       try{
         await gs('setMasterActive', masterState.type, item.id, !item.active);
         toast(item.active ? 'ปิดใช้งานแล้ว' : 'เปิดใช้งานแล้ว');
-      } finally { renderMasterList(); }
+      } finally { refreshMasterList(); }
     };
     row.appendChild(sw);
   }
@@ -4174,7 +4519,7 @@ function masterRow(item){
     try{
       await gs('deleteMasterPermanent', masterState.type, item.id);
       toast('ลบแล้ว');
-    } finally { renderMasterList(); }
+    } finally { refreshMasterList(); }
   };
   row.appendChild(delBtn);
 
@@ -4202,7 +4547,7 @@ async function renderUsersList(){
     try{
       await gs('addAllowedUser', email, name);
       toast('เพิ่มผู้ใช้งานแล้ว');
-      renderMasterList();
+      refreshMasterList();
     } finally { btn.disabled = false; }
   };
 
@@ -4221,13 +4566,13 @@ async function renderUsersList(){
     const sw = el(`<button class="switch ${u.active ? 'on' : ''}"></button>`);
     sw.onclick = async () => {
       try{ await gs('setAllowedUserActive', u.row, !u.active); toast(u.active ? 'ปิดสิทธิ์แล้ว' : 'เปิดสิทธิ์แล้ว'); }
-      finally { renderMasterList(); }
+      finally { refreshMasterList(); }
     };
     const delBtn = el(`<button class="icon-btn danger">🗑️</button>`);
     delBtn.onclick = async () => {
     if (!(await customConfirm(`ลบสิทธิ์การเข้าใช้งานของ ${u.email}?`))) return;
       try{ await gs('removeAllowedUser', u.row); toast('ลบแล้ว'); }
-      finally { renderMasterList(); }
+      finally { refreshMasterList(); }
     };
     row.appendChild(sw);
     row.appendChild(delBtn);
@@ -4240,7 +4585,7 @@ async function renderUsersList(){
 async function renderMergePicker(){
   document.querySelectorAll('.select-bar').forEach(b => b.remove());
   setTopbar({ title:'เลือกรายการหลัก', showBack:true });
-
+  content.innerHTML = `<div class="spinner"></div>`; // ← เพิ่มบรรทัดนี้
   const ids = Array.from(masterState.selectedIds);
   const list = await gs('getMasterList', masterState.type);
   const items = list.filter(i => ids.includes(i.id));
@@ -4678,12 +5023,6 @@ function fillItemFields(idx, it){
   document.getElementById(`fItemPrice-${idx}`).value = it.total_price || 0;
 }
 
-
-
-
 </script>
-
-
-
 
 ##
