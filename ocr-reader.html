@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="th">
 <head>
@@ -300,18 +299,22 @@ function itemRowHtml(idx, item){
       <div style="display:flex; gap:6px;">
         <input type="text" id="riGroup-${idx}" value="${esc(item.product_name)}" style="flex:1;">
         <button type="button" class="copy-btn" data-target="riGroup-${idx}" style="flex-shrink:0; width:40px; border:1.5px solid var(--line); border-radius:10px; background:var(--card); cursor:pointer; font-size:14px;">📋</button>
+        <button type="button" class="clear-btn" data-target="riGroup-${idx}" style="flex-shrink:0; width:40px; border:1.5px solid var(--line); border-radius:10px; background:var(--card); cursor:pointer; font-size:14px; color:var(--danger);">✕</button>
       </div>
 
       <label>ลิงค์สินค้า (ไม่บังคับ)</label>
-      <input type="url" id="riUrl-${idx}" value="${esc(item.product_url)}" placeholder="เช่น ลิงก์ Shopee, Lazada">
+      <div style="display:flex; gap:6px;">
+        <input type="url" id="riUrl-${idx}" value="${esc(item.product_url)}" placeholder="เช่น ลิงก์ Shopee, Lazada" style="flex:1;">
+        <button type="button" class="copy-btn" data-target="riUrl-${idx}" style="flex-shrink:0; width:40px; border:1.5px solid var(--line); border-radius:10px; background:var(--card); cursor:pointer; font-size:14px;">📋</button>
+      </div>
 
       <div class="field-row" style="margin-top:10px;">
         <div><label>จำนวนซื้อ</label><input type="number" id="riQty-${idx}" value="${item.qty ?? ''}"></div>
-        <div><label>หน่วยซื้อ</label><input type="text" id="riUnitBuy-${idx}" value="ชิ้น"></div>
+        <div><label>หน่วยซื้อ</label><input type="text" id="riUnitBuy-${idx}" value=""></div>
       </div>
       <div class="field-row">
         <div><label>เรโช (1 หน่วยซื้อ = กี่หน่วยขาย)</label><input type="number" id="riRatio-${idx}" value="1"></div>
-        <div><label>หน่วยขาย</label><input type="text" id="riUnitSell-${idx}" value="ชิ้น"></div>
+        <div><label>หน่วยขาย</label><input type="text" id="riUnitSell-${idx}" value=""></div>
       </div>
 
       <label>ราคาต่อชิ้น (ไม่บังคับ — กรอกแล้วคำนวณราคารวมให้อัตโนมัติ)</label>
@@ -371,19 +374,28 @@ function addItemRow(item){
   qtyInput.addEventListener('input', recalc);
   unitInput.addEventListener('input', recalc);
 
-  const copyBtn = row.querySelector('.copy-btn');
-  copyBtn.onclick = async () => {
-    const input = document.getElementById(copyBtn.dataset.target);
-    try{
-      await navigator.clipboard.writeText(input.value);
-      const old = copyBtn.textContent;
-      copyBtn.textContent = '✅';
-      setTimeout(() => { copyBtn.textContent = old; }, 1000);
-    } catch(e){
-      input.select();
-      document.execCommand('copy');
-    }
-  };
+  row.querySelectorAll('.copy-btn').forEach(copyBtn => {
+    copyBtn.onclick = async () => {
+      const input = document.getElementById(copyBtn.dataset.target);
+      try{
+        await navigator.clipboard.writeText(input.value);
+        const old = copyBtn.textContent;
+        copyBtn.textContent = '✅';
+        setTimeout(() => { copyBtn.textContent = old; }, 1000);
+      } catch(e){
+        input.select();
+        document.execCommand('copy');
+      }
+    };
+  });
+
+  row.querySelectorAll('.clear-btn').forEach(clearBtn => {
+    clearBtn.onclick = () => {
+      const input = document.getElementById(clearBtn.dataset.target);
+      input.value = '';
+      input.focus();
+    };
+  });
 }
 document.getElementById('addItemBtn').onclick = () => addItemRow({});
 
