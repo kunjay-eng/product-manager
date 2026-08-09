@@ -117,10 +117,72 @@
   <button class="btn btn-mint" id="confirmBtn" style="margin-top:18px;">✔ ยืนยัน ส่งกลับไปกรอกฟอร์ม</button>
 </div>
 
+<datalist id="categoryOptions"></datalist>
+<datalist id="groupOptions"></datalist>
+
 <script>
 const params = new URLSearchParams(location.search);
 const SESSION = params.get('session');
+let masterData = { categories: [], productGroups: [] };
 
+if (window.opener){
+  window.opener.postMessage({ type: 'OCR_READY', session: SESSION }, '*');
+}
+window.addEventListener('message', (event) => {
+  const data = event.data;
+  if (!data || data.type !== 'INIT_DATA') return;
+  if (data.session !== SESSION) return;
+  masterData = data.payload || { categories: [], productGroups: [] };
+  populateSharedDatalists();
+  document.querySelectorAll('.item-row').forEach(row => checkGroupMatch(row.dataset.idx));
+});
+
+function normalizeName(s){ return (s || '').toString().trim().toLowerCase().replace(/\s+/g, ''); }
+
+function populateSharedDatalists(){
+  const catList = document.getElementById('categoryOptions');
+  const groupList = document.getElementById('groupOptions');
+  catList.innerHTML = '';
+  masterData.categories.forEach(c => { const o = document.createElement('option'); o.value = c.name; catList.appendChild(o); });
+  groupList.innerHTML = '';
+  masterData.productGroups.forEach(p => { const o = document.createElement('option'); o.value = p.name; groupList.appendChild(o); });
+}
+
+function checkGroupMatch(idx){
+  const groupInput = document.getElementById(`riGroup-${idx}`);
+  const noteEl = document.getElementById(`riMatchNote-${idx}`);
+  if (!groupInput || !noteEl) return;
+  const typed = normalizeName(groupInput.value);
+  if (!typed){ noteEl.textContent = ''; return; }
+
+  const match = masterData.productGroups.find(p => normalizeName(p.name) === typed);
+  if (!match){ noteEl.textContent = ''; return; }
+
+  if (match.has_history){
+    const ub = document.getElementById(`riUnitBuy-${idx}`);
+    const us = document.getElementById(`riUnitSell-${idx}`);
+    const r = document.getElementById(`riRatio-${idx}`);
+    if (ub && !ub.value) ub.value = match.unit_buy || '';
+    if (us && !us.value) us.value = match.unit_sell || '';
+    if (r && (!r.value || r.value === '1')) r.value = match.ratio || 1;
+    noteEl.textContent = '✓ พบสินค้านี้ในระบบแล้ว — เติมหน่วย/เรโชให้อัตโนมัติ';
+    noteEl.style.color = 'var(--mint)';
+  } else {
+    noteEl.textContent = '✓ พบชื่อนี้ในระบบ (ยังไม่มีประวัติซื้อ)';
+    noteEl.style.color = 'var(--ink-soft)';
+  }
+
+  const catInput = document.getElementById(`riCategory-${idx}`);
+  if (catInput && !catInput.value.trim() && match.category_id){
+    const cat = masterData.categories.find(c => c.id === match.category_id);
+    if (cat) catInput.value = cat.name;
+  }
+}
+
+
+
+
+  
 const apiKeyInput = document.getElementById('apiKey');
 apiKeyInput.value = localStorage.getItem('gemini_api_key') || '';
 apiKeyInput.addEventListener('input', () => localStorage.setItem('gemini_api_key', apiKeyInput.value.trim()));
@@ -292,15 +354,18 @@ function itemRowHtml(idx, item){
       <button class="rm-item" data-idx="${idx}">✕ ลบ</button>
       <div class="item-title">สินค้าที่ ${idx + 1}</div>
 
-      <label>หมวดสินค้าหลัก</label>
-      <input type="text" id="riCategory-${idx}" placeholder="เช่น ขนม (กรอกเอง — AI ไม่เดาให้)">
+    <label>หมวดสินค้าหลัก</label>
+  <input type="text" id="riCategory-${idx}" list="categoryOptions" placeholder="เช่น ขนม (พิมพ์เพื่อดูตัวเลือก หรือพิมพ์ใหม่ได้เลย)">
 
-      <label>กลุ่มสินค้า</label>
-      <div style="display:flex; gap:6px;">
-        <input type="text" id="riGroup-${idx}" value="${esc(item.product_name)}" style="flex:1;">
-        <button type="button" class="copy-btn" data-target="riGroup-${idx}" style="flex-shrink:0; width:40px; border:1.5px solid var(--line); border-radius:10px; background:var(--card); cursor:pointer; font-size:14px;">📋</button>
-        <button type="button" class="clear-btn" data-target="riGroup-${idx}" style="flex-shrink:0; width:40px; border:1.5px solid var(--line); border-radius:10px; background:var(--card); cursor:pointer; font-size:14px; color:var(--danger);">✕</button>
-      </div>
+
+<label>กลุ่มสินค้า</label>
+<div style="display:flex; gap:6px;">
+  <input type="text" id="riGroup-${idx}" list="groupOptions" value="${esc(item.product_name)}" style="flex:1;">
+  <button type="button" class="copy-btn" data-target="riGroup-${idx}" ...>📋</button>
+  <button type="button" class="clear-btn" data-target="riGroup-${idx}" ...>✕</button>
+</div>
+<div class="note" id="riMatchNote-${idx}"></div>
+
 
       <label>ลิงค์สินค้า (ไม่บังคับ)</label>
       <div style="display:flex; gap:6px;">
@@ -361,6 +426,9 @@ function addItemRow(item){
   const row = div.firstElementChild;
   wrap.appendChild(row);
   row.querySelector('.rm-item').onclick = () => row.remove();
+  document.getElementById(`riGroup-${idx}`).addEventListener('input', () => checkGroupMatch(idx));
+  checkGroupMatch(idx); // เผื่อ masterData มาถึงก่อนแล้ว (เช่น AI อ่านช้ากว่าโหลดข้อมูล)
+
 
   // คำนวณ "ราคาสินค้ารายการนี้" อัตโนมัติ = ราคาต่อชิ้น × จำนวนซื้อ เวลาผู้ใช้แก้ไขช่องใดช่องหนึ่ง
   const qtyInput = document.getElementById(`riQty-${idx}`);
@@ -464,5 +532,6 @@ document.getElementById('confirmBtn').onclick = () => {
   }
 };
 </script>
+  
 </body>
 </html>
