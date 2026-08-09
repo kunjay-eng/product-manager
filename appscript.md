@@ -1866,6 +1866,71 @@ function getSwitchStoreSuggestions(){
   return suggestions.sort((a, b) => b.savings_per_unit - a.savings_per_unit);
 }
 
+// เพิ่มฟังก์ชันดึงข้อมูล (อ่านชีตแค่ครั้งเดียว กันช้า)
+function getMasterDataForOCR(){
+  const categories = getCategories(); // [{id, name}] มีอยู่แล้ว
+
+  const pgSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('ProductGroups');
+  const pgLastRow = pgSheet.getLastRow();
+  if (pgLastRow <= 1) return { categories, productGroups: [] };
+
+  const pgHeaders = pgSheet.getRange(1, 1, 1, pgSheet.getLastColumn()).getValues()[0];
+  const pgData = pgSheet.getRange(2, 1, pgLastRow - 1, pgSheet.getLastColumn()).getValues();
+  const activeIdx = pgHeaders.indexOf('active');
+  const idIdx = pgHeaders.indexOf('id');
+  const catIdx = pgHeaders.indexOf('category_id');
+  const nameIdx = pgHeaders.indexOf('name');
+
+  // อ่านชีต Purchases แค่ครั้งเดียว หาแถวล่าสุดของแต่ละกลุ่มสินค้า (กันปัญหาช้าแบบ N+1)
+  const pSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Purchases');
+  const pLastRow = pSheet.getLastRow();
+  const latestByGroup = {};
+  if (pLastRow > 1){
+    const pHeaders = pSheet.getRange(1, 1, 1, pSheet.getLastColumn()).getValues()[0];
+    const pData = pSheet.getRange(2, 1, pLastRow - 1, pSheet.getLastColumn()).getValues();
+    const statusIdx = pHeaders.indexOf('status');
+    const gidIdx = pHeaders.indexOf('product_group_id');
+    const dateIdx = pHeaders.indexOf('date');
+    const ubIdx = pHeaders.indexOf('unit_buy');
+    const usIdx = pHeaders.indexOf('unit_sell');
+    const rIdx = pHeaders.indexOf('ratio');
+
+    pData.forEach(row => {
+      if (statusIdx !== -1 && row[statusIdx] === 'cancelled') return;
+      const gid = row[gidIdx];
+      const existing = latestByGroup[gid];
+      if (!existing || new Date(row[dateIdx]) > new Date(existing.date)){
+        latestByGroup[gid] = { date: row[dateIdx], unit_buy: row[ubIdx], unit_sell: row[usIdx], ratio: row[rIdx] };
+      }
+    });
+  }
+
+  const productGroups = pgData
+    .filter(row => row[activeIdx] !== false)
+    .map(row => {
+      const pgId = row[idIdx];
+      const latest = latestByGroup[pgId];
+      return {
+        id: pgId, name: row[nameIdx], category_id: row[catIdx],
+        has_history: !!latest,
+        unit_buy: latest ? latest.unit_buy : '',
+        unit_sell: latest ? latest.unit_sell : '',
+        ratio: latest ? latest.ratio : ''
+      };
+    });
+
+  return { categories, productGroups };
+}
+
+
+
+
+
+
+
+
+
+
 /** Dashboard รายเดือน: สรุปยอด + ดัชนีราคา + สินค้าที่ควรซื้อเพิ่ม + insight อัตโนมัติ */
 function getDashboardData(year, month){
   const now = new Date();
@@ -1964,8 +2029,7 @@ function getDashboardData(year, month){
     insights: insights
   };
 }
-
-
+// ---End Code.gs ---
 
 ## Index.html
 <!DOCTYPE html>
@@ -2821,6 +2885,9 @@ function route(fromHashChange){
     else if (view === 'add-purchase')           result = renderAddPurchase();
    else if (view === 'master')                 result = renderMaster();
    else if (view === 'store-ranking')          result = renderStoreRanking();
+   else if (view === 'switch-store')           result = renderSwitchStore();   // ← เพิ่มบรรทัดนี้
+   else if (view === 'reorder-list')           result = renderReorderList();
+
    else if (view === 'price-history')          result = a ? renderPriceHistoryDetail(a) : renderPriceHistoryPicker();
     else if (view === 'dashboard')          result = renderDashboard();
     else                                          result = renderHome();
@@ -4075,6 +4142,40 @@ async function renderStoreRanking(){
 }
 
 
+async function renderReorderList(){
+  setTopbar({ title: '⏰ ควรซื้อเพิ่ม', showBack: true });
+  content.innerHTML = `<div class="spinner"></div>`;
+
+  const cards = await gs('getProductGroupCardsBatch', null);
+  const list = cards.filter(c => c.should_reorder);
+
+  content.innerHTML = '';
+  if (list.length === 0){
+    content.innerHTML = emptyState('🎉', 'ไม่มีสินค้าที่ถึงรอบต้องซื้อเพิ่มตอนนี้', '');
+    return;
+  }
+
+  content.appendChild(el(`<div style="font-size:13px; color:var(--ink-soft); margin-bottom:12px;">สินค้าที่ซื้อครั้งล่าสุดนานเกินรอบปกติแล้ว</div>`));
+
+  list.forEach(c => {
+    const row = el(`
+      <div class="row-card">
+        <div class="avatar" style="background:var(--yellow);">⏰</div>
+        <div class="row-main">
+          <div class="row-title">${c.name}</div>
+          <div class="row-sub">🗓️ ซื้อล่าสุด ${c.last_purchase_date ? fmtDate(c.last_purchase_date) : '-'} · ปกติซื้อทุก ~${c.purchase_frequency_days} วัน (ผ่านมาแล้ว ${c.days_since_last_purchase} วัน)</div>
+        </div>
+        <div class="row-arrow">›</div>
+      </div>`);
+    row.onclick = () => go(`#/product/${c.id}`);
+    content.appendChild(row);
+  });
+}
+
+
+
+
+
 async function renderSwitchStore(){
   setTopbar({ title: '💡ควรเปลี่ยนร้าน', showBack: true });
   content.innerHTML = `<div class="spinner"></div>`;
@@ -4185,8 +4286,8 @@ async function renderDashboard(){
   const linkRow = el(`<div style="display:flex; gap:8px; margin-top:14px;"></div>`);
   if (d.reorder_count > 0){
     const btn = el(`<button class="btn btn-ghost" style="flex:1;">⏰ควรซื้อเพิ่ม (${d.reorder_count})</button>`);
-    btn.onclick = () => go('#/home');
-    linkRow.appendChild(btn);
+    btn.onclick = () => go('#/reorder-list');   // ← เปลี่ยนจาก '#/home'
+      linkRow.appendChild(btn);
   }
   if (d.switch_suggestion_count > 0){
     const btn = el(`<button class="btn btn-ghost" style="flex:1;">💡ควรเปลี่ยนร้าน (${d.switch_suggestion_count})</button>`);
@@ -4919,31 +5020,55 @@ const OCR_READER_URL = "https://kunjay-eng.github.io/product-manager/ocr-reader.
 
 let ocrSession = null;
 let ocrWindow = null;
+let ocrInitData = null;       // แคชหมวด/กลุ่มสินค้า กันดึงซ้ำทุกครั้งที่เปิด
+let ocrReadyReceived = false; // true เมื่อหน้าต่าง OCR แจ้งว่าพร้อมรับข้อมูลแล้ว
 
 function openOCRReaderExternal(){
   ocrSession = crypto.randomUUID();
+  ocrReadyReceived = false;
+
+  // ต้องเปิดหน้าต่างแบบ synchronous ก่อน await ใดๆ เสมอ กัน popup blocker
   ocrWindow = window.open(
     OCR_READER_URL + "?session=" + encodeURIComponent(ocrSession),
     "ocrReader",
     "width=460,height=800"
   );
+
+  (async () => {
+    if (!ocrInitData){
+      try{ ocrInitData = await gs('getMasterDataForOCR'); }
+      catch(err){ console.error('โหลดข้อมูลหมวด/กลุ่มสินค้าไม่สำเร็จ:', err); ocrInitData = { categories: [], productGroups: [] }; }
+    }
+    sendOcrInitDataIfReady();
+  })();
+}
+
+function sendOcrInitDataIfReady(){
+  if (ocrReadyReceived && ocrInitData && ocrWindow && !ocrWindow.closed){
+    ocrWindow.postMessage({ type: "INIT_DATA", session: ocrSession, payload: ocrInitData }, GITHUB_ORIGIN);
+  }
 }
 
 window.addEventListener("message", function (event) {
-  // ใช้ GITHUB_ORIGIN ตัวเดียวกับ QR scanner (ประกาศไว้แล้วด้านบนในไฟล์)
   if (event.origin !== GITHUB_ORIGIN) return;
-
   const data = event.data;
-  if (!data || data.type !== "OCR_RESULT") return;
+  if (!data) return;
+
+  if (data.type === "OCR_READY" && data.session === ocrSession){
+    ocrReadyReceived = true;
+    sendOcrInitDataIfReady();
+    return;
+  }
+
+  if (data.type !== "OCR_RESULT") return;
   if (data.session !== ocrSession) return;
 
-  try {
-    if (ocrWindow && !ocrWindow.closed) ocrWindow.close();
-  } catch (e) {}
+  try { if (ocrWindow && !ocrWindow.closed) ocrWindow.close(); } catch (e) {}
   ocrSession = null;
 
   handleOCRResult(data.data);
 });
+
 
 /**
  * data = {
@@ -5010,9 +5135,8 @@ function handleOCRResult(data){
 }
 
 function fillItemFields(idx, it){
-  // หมวดสินค้าหลัก: ตั้งใจเว้นว่างเสมอ ให้ผู้ใช้เลือก/พิมพ์เอง (autocomplete จะช่วยเดาจากชื่อสินค้าที่เคยบันทึกไว้)
-  document.getElementById(`fCategory-${idx}`).value = '';
-
+   // ใช้หมวดสินค้าที่ผู้ใช้เลือก/พิมพ์มาจากหน้า OCR ถ้ามี ไม่งั้นเว้นว่างให้เลือกเองในฟอร์ม
+  document.getElementById(`fCategory-${idx}`).value = it.category_name || '';
   document.getElementById(`fGroup-${idx}`).value = it.product_name || '';
   document.getElementById(`fProductUrl-${idx}`).value = it.product_url || '';
   document.getElementById(`fQty-${idx}`).value = it.qty || 1;
@@ -5022,7 +5146,6 @@ function fillItemFields(idx, it){
   if (it.unit_price) document.getElementById(`fUnitPrice-${idx}`).value = it.unit_price;
   document.getElementById(`fItemPrice-${idx}`).value = it.total_price || 0;
 }
-
 </script>
 
-##
+## End
