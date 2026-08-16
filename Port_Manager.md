@@ -1,18 +1,5 @@
 ## Index.html
-<!-- ══Index.html - frontend ------
-max-width : 560px
-เมนู PageNav.js
-เมนู Setting.js        เมนู Setting.html
-เมนู Summary.js        เมนู Summary.html
-เมนู Holdings.js       เมนู Holdings.html
-เมนู Analyze.js        เมนู Analyze.html
-เมนู ปันผล.js           เมนู ปันผล.html
-เมนู Watchlist.js      เมนู Watchlist.html
-เมนู Helpers.js        เมนู Helpers.html
-เมนู บันทึก.js           เมนู บันทึก.html
-เริ่ม.js
--------------------------------
-══ -->
+<!-- ══Index.html - frontend --══ -->
 <!DOCTYPE html>
 <html lang="th">
 <head>
@@ -131,7 +118,6 @@ max-width : 560px
 
    <!-- ════ PAGE: Holdings ════
   เมนู Holdings.html
-       
   ════ -->
 
   <div class="page" id="page-holdings">
@@ -176,16 +162,12 @@ max-width : 560px
    <button class="update-price-btn" onclick="openSellCalculator()" style="margin:4px 0 12px">🧮 คำนวณการขายหุ้น (กำไร/ขาดทุนรวม)</button>
   
 
-
   <div id="hcards"><div class="spin-wrap"><div class="spinner"></div></div></div>
   </div><!-- /page-holdings -->
 
 
  <!-- ════ PAGE: วิเคราะห์หุ้น ════
  เมนู Analyze.html
-       ค้นหา/เลือกหุ้นจากลิสต์ที่ติดตามใน ATR Portfolio (US/TH) แล้ววิเคราะห์
-       ทันทีด้วย getStockAnalysis() (analyze.gs) — ตรรกะเดียวกับคำสั่ง
-       /analyze ของ Telegram Bot เดิม
   ════ -->
   <div class="page" id="page-analyze">
 
@@ -197,9 +179,6 @@ max-width : 560px
   <button class="main-toggle-btn" id="mt-rebal" onclick="switchMainView('rebal')">⚖️ Rebalance ภาพรวม</button>
   <button class="main-toggle-btn" id="mt-fee" onclick="switchMainView('fee')">💸 Fee Analysis</button>
 </div>
-
-
-
 
 <!-- ═══════════════════════════════════════
      VIEW 1: ภาพรวมสัญญาณ
@@ -299,27 +278,6 @@ max-width : 560px
   <div id="stock-detail-content"><div class="spin-wrap"><div class="spinner"></div></div></div>
 </div><!-- /view-stock-detail -->
 
-<!-- ══ หน้ารายละเอียดหุ้นรายตัว — เปิดทับทุกอย่าง (⚡ Fast ↔ 📊 Portfolio) ซากเก่า
-<div id="stock-detail-view" style="display:none; position:fixed; inset:0; background:var(--bg); z-index:70; overflow-y:auto; padding:16px 15px 40px">
-  <button class="an-back" onclick="closeStockDetail()">← กลับ</button>
-
-  <div class="an-header">
-    <div class="an-title-wrap">
-      <span class="an-flag" id="sd-flag"></span>
-      <span class="an-symbol" id="sd-symbol"></span>
-    </div>
-  </div>
-
-  <div class="main-toggle">
-    <button class="main-toggle-btn" id="sd-tab-fast" onclick="switchStockDetailTab('fast')">⚡ Fast Analysis</button>
-    <button class="main-toggle-btn" id="sd-tab-portfolio" onclick="switchStockDetailTab('portfolio')">📊 Portfolio Analysis</button>
-  </div>
-
-  <div id="sd-content"><div class="spin-wrap"><div class="spinner"></div></div></div>
-</div>
-══ -->
-
-
 
 <!-- ══ Buy Plan Calculator Modal — กรอกเงินทุนรวม ระบบคำนวณแบ่งไม้ให้ ══ -->
 <div id="calc-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:60; align-items:flex-end; justify-content:center; padding:0">
@@ -327,8 +285,6 @@ max-width : 560px
     <div style="font-size:17px; font-weight:800; margin-bottom:4px">🧮 คำนวณแผนแบ่งไม้ — <span id="calc-ticker-lbl"></span></div>
     <div style="font-size:12.5px; color:var(--muted); margin-bottom:16px">กรอกเงินทุนรวมที่จะซื้อ ระบบจะคำนวณจุดเข้าซื้อแต่ละไม้ให้อัตโนมัติ</div>
 
-
-    
 
     <!-- toggle บาท/ดอลลาร์ — โชว์เฉพาะตอนเลือกหุ้นสหรัฐ (หุ้นไทยกรอกเป็นบาทอยู่แล้วไม่ต้องแปลง) -->
     <div id="calc-currency-toggle" class="plan-toggle" style="display:none">
@@ -392,10 +348,8 @@ max-width : 560px
   <!-- /page-dividend -->
 
 
-
-     <!-- ════ PAGE: บันทึก ════
-      .html
-     <!-- ════ PAGE: บันทึก ════
+ <!-- ════ PAGE: บันทึก ════
+      entry.html
        หมายเหตุ: รองรับการเพิ่มประเภทบันทึกใหม่ในอนาคตได้ง่าย —
        ดู ENTRY_TABS ในสคริปต์ด้านล่าง แค่ (1) เพิ่ม object ใน ENTRY_TABS
        (2) เพิ่มปุ่ม .segtab ในนี้ (3) เพิ่ม <div class="subpanel"> ฟอร์มใหม่
@@ -499,72 +453,6 @@ max-width : 560px
       <button class="submit-btn btn-th" onclick="submitTH()">✅ บันทึกหุ้นไทย</button>
     </div>
 
-
-<!-- ════════════════════════════════════════════════════════════
-     วิธีใช้ไฟล์นี้:
-     1) ก็อปบล็อก <div id="stockmode-overlay">...</div> ด้านล่าง ไปวางใน
-        Index.html ก่อน </body> (ตำแหน่งเดียวกับ #calc-overlay เดิมก็ได้)
-     2) ก็อปบล็อก <script> ด้านล่างสุด ไปวางต่อท้าย <script> เดิมใน Index.html
-        (ก่อน window.addEventListener('DOMContentLoaded', ...) ก็ได้)
-     3) แก้ submitUS()/submitTH() ใน Helpers.js — ดูหมายเหตุท้ายไฟล์นี้
-════════════════════════════════════════════════════════════ -->
-
-<!-- ══ StockMode Step 2 — ตั้งค่าหุ้นใหม่ทันทีหลังบันทึกซื้อ ══ -->
-<div id="stockmode-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:60; align-items:flex-end; justify-content:center; padding:0">
-  <div style="background:var(--surface); border-radius:20px 20px 0 0; padding:22px 20px 28px; max-width:560px; width:100%; max-height:88vh; overflow-y:auto; box-shadow:0 -8px 30px rgba(0,0,0,.4)">
-    <div style="font-size:17px; font-weight:800; margin-bottom:4px">🏷️ ตั้งค่าหุ้นใหม่ — <span id="sm-ticker-lbl"></span></div>
-    <div style="font-size:12.5px; color:var(--muted); margin-bottom:16px">หุ้นตัวนี้ยังไม่มีใน StockMode กรุณาตั้งค่าก่อนเริ่มวิเคราะห์/ติดตาม</div>
-
-    <div class="section-label">📌 ประเภทสินทรัพย์</div>
-    <div class="field">
-      <select id="sm-assetType">
-        <option value="หุ้น">หุ้น</option>
-        <option value="ETF">ETF</option>
-      </select>
-    </div>
-
-    <div class="section-label">⚡ โหมด</div>
-    <div class="type-row">
-      <button class="type-btn buy selected" id="sm-mode-fast" onclick="setStockModeMode('Fast')">⚡ Fast</button>
-      <button class="type-btn sell" id="sm-mode-portfolio" onclick="setStockModeMode('Portfolio')">📊 Portfolio</button>
-    </div>
-    <input type="hidden" id="sm-mode" value="Fast">
-
-    <div class="section-label">🏷️ กลุ่ม Trend</div>
-    <div class="field">
-      <select id="sm-trendGroup">
-        <option value="Growth">🌱 Growth</option>
-        <option value="Value">💎 Value</option>
-        <option value="Defensive">🛡️ Defensive</option>
-        <option value="Dividend">💰 Dividend</option>
-      </select>
-    </div>
-
-    <div class="section-label">🎯 ค่ากำหนดเอง (ไม่บังคับ — เว้นว่างได้ ระบบใช้ default)</div>
-    <div class="field">
-      <label>Target Weight (%)</label>
-      <input type="number" id="sm-targetWeight" placeholder="ไม่บังคับ" step="0.1" inputmode="decimal">
-    </div>
-    <div class="fee-grid">
-      <div class="field"><label>Cut Stop (x ATR)</label><input type="number" id="sm-cutStop" placeholder="default" step="0.1" inputmode="decimal"></div>
-      <div class="field"><label>Trailing Stop (x ATR)</label><input type="number" id="sm-trailingStop" placeholder="default" step="0.1" inputmode="decimal"></div>
-    </div>
-    <div class="field">
-      <label>Take Profit เตือน (%)</label>
-      <input type="number" id="sm-takeProfit" placeholder="เช่น 30" step="1" inputmode="decimal">
-    </div>
-    <div class="field">
-      <label>หมายเหตุ</label>
-      <textarea id="sm-note" placeholder="เช่น เหตุผลที่ซื้อ / แผนถือ"></textarea>
-    </div>
-
-    <button class="submit-btn btn-us" onclick="submitStockModeStep2()">✅ บันทึกและเริ่มติดตาม</button>
-    <button class="wbtn ghost" style="width:100%; height:48px; margin-top:4px" onclick="skipStockModeStep2()">ข้ามไปก่อน (ตั้งทีหลังในชีต)</button>
-  </div>
-</div>
-
-
-
     <!-- DIV sub-panel -->
     <div class="subpanel subpanel-div" id="sub-div">
       <div class="section-label">📅 วันที่ปันผล</div>
@@ -613,6 +501,12 @@ max-width : 560px
         <label>NAV ปัจจุบัน (ต่อหน่วย)</label>
         <input type="number" id="nav-value" placeholder="0.0000" step="0.0001" inputmode="decimal">
       </div>
+    <div class="section-label">🧾 ภาษี</div>
+<div class="field">
+  <label>หักภาษีสหรัฐ ($) — กรอกเอง</label>
+  <input type="number" id="div-taxWithheld" placeholder="0.00" step="0.01" inputmode="decimal" value="0">
+</div>
+
       <button class="submit-btn btn-div" onclick="submitNav()">✅ บันทึก NAV</button>
     </div>
 
@@ -803,13 +697,6 @@ max-width : 560px
         <div class="spin-wrap"><div class="spinner"></div></div>
       </div>
     </div>
-
-  
-
-
-    <div class="empty-msg" style="padding:8px 4px 0;font-size:12px;text-align:left">
-      💡 Google Sheets แท็บ "Settings" และ "StockMode"
-    </div>
   </div>
   
   <!-- /page-settings -->
@@ -929,30 +816,7 @@ max-width : 560px
   <!-- ══ มุมมองผลวิเคราะห์ ══ -->
   <div id="wl-analyze-view" style="display:none"></div>
 
-  <!-- ══ Confirm Remove Modal (จุดที่หายไปก่อนหน้านี้) ══ -->
-  <div id="confirm-overlay" style="display:none">
-    <div class="confirm-box">
-      <div class="confirm-icon">🗑️</div>
-      <div class="confirm-title">นำออกจาก Watchlist?</div>
-      <div class="confirm-body">ต้องการลบ <b id="confirm-ticker"></b> ออกจากรายการที่ติดตามใช่ไหม<br>สามารถเพิ่มกลับเข้ามาใหม่ได้ภายหลัง</div>
-      <div class="confirm-actions">
-        <button class="confirm-btn cancel" onclick="closeConfirm()">ยกเลิก</button>
-        <button class="confirm-btn danger" onclick="confirmRemove()">ลบออก</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ══ Note Modal (จุดที่หายไปก่อนหน้านี้) ══ -->
-  <div id="note-overlay" style="display:none">
-    <div class="confirm-box">
-      <div class="confirm-title" style="text-align:left;margin-bottom:14px">💡โน้ต — <span id="note-ticker"></span></div>
-      <textarea class="note-textarea" id="note-text" placeholder="แผน / เหตุผลที่ติดตามหุ้นนี้"></textarea>
-      <div class="confirm-actions">
-        <button class="confirm-btn cancel" onclick="closeNote()">ยกเลิก</button>
-        <button class="confirm-btn save" onclick="saveNote()">บันทึก</button>
-      </div>
-    </div>
-  </div>
+  
 
 <!-- ══ Edit Plan Modal — แก้ไขราคาเป้าหมาย + แนวรับ ของหุ้นใน Watchlist ══ -->
 <div id="editplan-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:60; align-items:flex-end; justify-content:center; padding:0">
@@ -1070,6 +934,17 @@ max-width : 560px
 <!-- /scroll-area -->
 
 <!-- ══ ส่วนของ Modal ของนอก หรือ popup ต้องมาใส่ตรงนี้ทั้งหมด ══ -->
+<!-- ══ Modal dividend ประวัติปันผล ══ -->
+<div id="dividend-history-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:60; align-items:flex-end; justify-content:center; padding:0">
+  <div style="background:var(--bg2,#12131a); width:100%; max-width:560px; max-height:85vh; overflow-y:auto; border-radius:16px 16px 0 0; padding:20px">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px">
+      <div id="dh-title" style="font-size:17px; font-weight:800">📜 ประวัติปันผล</div>
+    </div>
+    <div id="dh-content"><div class="spin-wrap"><div class="spinner"></div></div></div>
+    <button class="wbtn ghost" style="width:100%; height:48px; margin-top:4px" onclick="closeDividendHistory()">ยกเลิก</button>
+  </div>
+</div>
+
 <!-- ══ Modal StockMode — แก้ไขหุ้นที่มีอยู่แล้ว ══ -->
 <div id="stockmode-edit-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:60; align-items:flex-end; justify-content:center; padding:0">
   <div style="background:var(--surface); border-radius:20px 20px 0 0; padding:22px 20px 28px; max-width:560px; width:100%; max-height:88vh; overflow-y:auto; box-shadow:0 -8px 30px rgba(0,0,0,.4)">
@@ -1123,15 +998,125 @@ max-width : 560px
       <label>Take Profit เตือน (%)</label>
       <input type="number" id="sme-takeProfit" placeholder="เช่น 30" step="1" inputmode="decimal">
     </div>
+
+    <div id="sme-portfolio-trail-fields">
+  <div class="field"><label>Trail Start % (Portfolio)</label><input type="number" id="sme-pfTrailStart" placeholder="default 10" step="1" inputmode="decimal"></div>
+  <div class="field"><label>Trail ATR × (Portfolio)</label><input type="number" id="sme-pfTrailAtrX" placeholder="default 3.5" step="0.1" inputmode="decimal"></div>
+
+  <div class="fee-grid">
+    <div class="field"><label>Min Profit Protect % (พื้นกันทุน)</label><input type="number" id="sme-minProfitProtect" placeholder="default 1" step="0.5" inputmode="decimal"></div>
+    <div class="field">
+      <label>Trigger Mode</label>
+      <select id="sme-trailTriggerMode">
+        <option value="">default (ราคาปิดล่าสุด)</option>
+        <option value="currentPrice">ราคาปัจจุบัน (เรียลไทม์)</option>
+        <option value="lastClose">ราคาปิดล่าสุด</option>
+        <option value="todayLow">ราคาต่ำสุดวันนี้</option>
+      </select>
+    </div>
+  </div>
+  <div class="field"><label>Trail Reset % (High ใหม่ต้องสูงกว่าเดิมกี่ %)</label><input type="number" id="sme-trailResetPct" placeholder="default 0.5" step="0.1" inputmode="decimal"></div>
+</div>
+
+
     <div class="field">
       <label>หมายเหตุ</label>
       <textarea id="sme-note" placeholder="เช่น เหตุผลที่ซื้อ / แผนถือ"></textarea>
     </div>
 
+
     <button class="submit-btn btn-us" id="sme-save-btn" onclick="submitEditStockMode()">✅ บันทึกการแก้ไข</button>
     <button class="wbtn ghost" style="width:100%; height:48px; margin-top:4px" onclick="closeEditStockMode()">ยกเลิก</button>
   </div>
 </div>
+
+
+<!-- ════════════════════════════════════════════════════════════
+     วิธีใช้ไฟล์นี้:
+     1) ก็อปบล็อก <div id="stockmode-overlay">...</div> ด้านล่าง ไปวางใน
+        Index.html ก่อน </body> (ตำแหน่งเดียวกับ #calc-overlay เดิมก็ได้)
+     2) ก็อปบล็อก <script> ด้านล่างสุด ไปวางต่อท้าย <script> เดิมใน Index.html
+        (ก่อน window.addEventListener('DOMContentLoaded', ...) ก็ได้)
+     3) แก้ submitUS()/submitTH() ใน Helpers.js — ดูหมายเหตุท้ายไฟล์นี้
+════════════════════════════════════════════════════════════ -->
+
+<!-- ══ StockMode Step 2 — ตั้งค่าหุ้นใหม่ทันทีหลังบันทึกซื้อ ══ -->
+<div id="stockmode-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:60; align-items:flex-end; justify-content:center; padding:0">
+  <div style="background:var(--surface); border-radius:20px 20px 0 0; padding:22px 20px 28px; max-width:560px; width:100%; max-height:88vh; overflow-y:auto; box-shadow:0 -8px 30px rgba(0,0,0,.4)">
+    <div style="font-size:17px; font-weight:800; margin-bottom:4px">🏷️ ตั้งค่าหุ้นใหม่ — <span id="sm-ticker-lbl"></span></div>
+    <div style="font-size:12.5px; color:var(--muted); margin-bottom:16px">หุ้นตัวนี้ยังไม่มีใน StockMode กรุณาตั้งค่าก่อนเริ่มวิเคราะห์/ติดตาม</div>
+
+    <div class="section-label">📌 ประเภทสินทรัพย์</div>
+    <div class="field">
+      <select id="sm-assetType">
+        <option value="หุ้น">หุ้น</option>
+        <option value="ETF">ETF</option>
+      </select>
+    </div>
+
+    <div class="section-label">⚡ โหมด</div>
+    <div class="type-row">
+      <button class="type-btn buy selected" id="sm-mode-fast" onclick="setStockModeMode('Fast')">⚡ Fast</button>
+      <button class="type-btn sell" id="sm-mode-portfolio" onclick="setStockModeMode('Portfolio')">📊 Portfolio</button>
+    </div>
+    <input type="hidden" id="sm-mode" value="Fast">
+
+    <div class="section-label">🏷️ กลุ่ม Trend</div>
+    <div class="field">
+      <select id="sm-trendGroup">
+        <option value="Growth">🌱 Growth</option>
+        <option value="Value">💎 Value</option>
+        <option value="Defensive">🛡️ Defensive</option>
+        <option value="Dividend">💰 Dividend</option>
+      </select>
+    </div>
+
+    <div class="section-label">🎯 ค่ากำหนดเอง (ไม่บังคับ — เว้นว่างได้ ระบบใช้ default)</div>
+    <div class="field">
+      <label>Target Weight (%)</label>
+      <input type="number" id="sm-targetWeight" placeholder="ไม่บังคับ" step="0.1" inputmode="decimal">
+    </div>
+    <div class="fee-grid">
+  <div class="field"><label>Cut Stop (x ATR)</label><input type="number" id="sm-cutStop" placeholder="default" step="0.1" inputmode="decimal"></div>
+  <div class="field"><label>Trailing Stop (x ATR)</label><input type="number" id="sm-trailingStop" placeholder="default" step="0.1" inputmode="decimal"></div>
+</div>
+<div class="field">
+  <label>Take Profit เตือน (%)</label>
+  <input type="number" id="sm-takeProfit" placeholder="เช่น 30" step="1" inputmode="decimal">
+</div>
+<div class="fee-grid" id="sm-portfolio-trail-fields">
+  <div class="field"><label>Trail Start % (Portfolio)</label><input type="number" id="sm-pfTrailStart" placeholder="default 10" step="1" inputmode="decimal"></div>
+  <div class="field"><label>Trail ATR × (Portfolio)</label><input type="number" id="sm-pfTrailAtrX" placeholder="default 3.5" step="0.1" inputmode="decimal"></div>
+
+<div class="fee-grid">
+  <div class="field"><label>Trail Start % (Portfolio)</label><input type="number" id="sme-pfTrailStart" placeholder="default 10" step="1" inputmode="decimal"></div>
+  <div class="field"><label>Trail ATR × (Portfolio)</label><input type="number" id="sme-pfTrailAtrX" placeholder="default 3.5" step="0.1" inputmode="decimal"></div>
+</div>
+<div class="fee-grid">
+  <div class="field"><label>Min Profit Protect % (พื้นกันทุน)</label><input type="number" id="sme-minProfitProtect" placeholder="default 1" step="0.5" inputmode="decimal"></div>
+  <div class="field">
+    <label>Trigger Mode</label>
+    <select id="sme-trailTriggerMode">
+      <option value="">default (ราคาปิดล่าสุด)</option>
+      <option value="currentPrice">ราคาปัจจุบัน (เรียลไทม์)</option>
+      <option value="lastClose">ราคาปิดล่าสุด</option>
+      <option value="todayLow">ราคาต่ำสุดวันนี้</option>
+    </select>
+  </div>
+</div>
+<div class="field"><label>Trail Reset % (High ใหม่ต้องสูงกว่าเดิมกี่ %)</label><input type="number" id="sme-trailResetPct" placeholder="default 0.5" step="0.1" inputmode="decimal"></div>
+</div>
+
+    <div class="field">
+      <label>หมายเหตุ</label>
+      <textarea id="sm-note" placeholder="เช่น เหตุผลที่ซื้อ / แผนถือ"></textarea>
+    </div>
+
+    <button class="submit-btn btn-us" onclick="submitStockModeStep2()">✅ บันทึกและเริ่มติดตาม</button>
+    <button class="wbtn ghost" style="width:100%; height:48px; margin-top:4px" onclick="skipStockModeStep2()">ข้ามไปก่อน (ตั้งทีหลังในชีต)</button>
+  </div>
+</div>
+
 
 <!-- ══ Average Cost Calculator Modal — ใช้ร่วมกันทั้งหน้า Holdings และ Stock Detail ══ -->
 <div id="avgcost-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:60; align-items:flex-end; justify-content:center; padding:0">
@@ -1185,6 +1170,22 @@ max-width : 560px
     <button class="wbtn ghost" style="width:100%; height:48px; margin-top:10px" onclick="closeAvgCostCalculator()">ปิด</button>
   </div>
 </div>
+
+
+<!-- ══ Daily Close History Modal — ราคาปิดรายวัน 30 วัน ใช้ร่วมกันทุกหน้า ══ -->
+<div id="dailyclose-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:60; align-items:flex-end; justify-content:center; padding:0">
+  <div style="background:var(--surface); border-radius:20px 20px 0 0; padding:22px 20px 28px; max-width:460px; width:100%; max-height:88vh; overflow-y:auto; box-shadow:0 -8px 30px rgba(0,0,0,.4)">
+    <div style="font-size:17px; font-weight:800; margin-bottom:4px">📅 ราคาปิดรายวัน — <span id="dc-ticker-lbl"></span></div>
+    <div style="font-size:12.5px; color:var(--muted); margin-bottom:14px" id="dc-range-lbl"></div>
+
+    <div id="dc-summary-box"></div>
+    <div id="dc-rows-wrap" style="margin-top:14px"><div class="spin-wrap"><div class="spinner"></div></div></div>
+
+    <button class="wbtn ghost" style="width:100%; height:48px; margin-top:14px" onclick="closeDailyCloseModal()">ปิด</button>
+  </div>
+</div>
+
+
 
 <!-- ══ Position Sizing Calculator — คำนวณจำนวนหุ้นจาก % ความเสี่ยง + ATR ══ -->
 <div id="possize-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:60; align-items:flex-end; justify-content:center; padding:0">
@@ -1323,12 +1324,7 @@ max-width : 560px
 </div>
 
 
-
-
-
-
 <!-- ══ modal ประวัติซื้อขาย:** ══ --> 
-
 <!-- ══════════════════════════════════════════════════════════════════
      trade_history_frontend.html
      วางวิธีนี้ใน Index.html:
@@ -1338,7 +1334,6 @@ max-width : 560px
        3) แก้ปุ่ม "ประวัติการซื้อ-ขาย" ทั้ง 3 จุด (Holdings card / Fast detail /
           Portfolio detail) ตามหมายเหตุท้ายไฟล์นี้
      ══════════════════════════════════════════════════════════════════ -->
-
 
 <!-- ══ Modal 1: List รวมทุก ticker (ใช้เป็นมุมมองภาพรวม/ค้นหา) ══ -->
 <div id="txhist-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:60; align-items:flex-end; justify-content:center; padding:0">
@@ -1384,7 +1379,6 @@ max-width : 560px
   </div>
 </div>
 
-
 <!-- ══ Modal 2: รายละเอียดต่อ ticker เดียว (ตัวหลักที่ใช้งานจริง) ══ -->
 <div id="txdetail-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:65; align-items:flex-end; justify-content:center">
   <div style="position:relative; background:var(--surface); border-radius:20px 20px 0 0; padding:22px 20px 28px; max-width:560px; width:100%; max-height:92vh; overflow-y:auto">
@@ -1393,7 +1387,6 @@ max-width : 560px
     <button class="wbtn ghost" style="width:100%; height:48px; margin-top:14px" onclick="document.getElementById('txdetail-overlay').style.display='none'">ปิด</button>
   </div>
 </div>
-
 
 <!-- ══ Modal 3: History Analysis (สถิติ 5 กลุ่ม) ══ -->
 <div id="txana-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:60; align-items:flex-end; justify-content:center">
@@ -1406,13 +1399,10 @@ max-width : 560px
   <option value="TH">🇹🇭 เฉพาะหุ้นไทย (฿)</option>
 </select>
 
-
-
    <div style="position:relative; margin-bottom:10px">
   <input type="text" id="txana-ticker" placeholder="Ticker (ว่าง=ทั้งหมด)" style="width:100%; box-sizing:border-box; text-transform:uppercase; background:var(--input-bg,#1a1a1a); border:1px solid var(--border,#333); border-radius:8px; padding:8px 40px 8px 10px; color:#fff; font-size:12.5px">
   <button onclick="loadHistoryAnalysis()" style="position:absolute; top:0; right:0; width:36px; height:100%; border:none; background:transparent; color:var(--text); font-size:17px; cursor:pointer; display:flex; align-items:center; justify-content:center">🔍</button>
 </div>
-
 
     <div id="txana-result"></div>
     <button class="wbtn ghost" style="width:100%; height:48px; margin-top:10px" onclick="document.getElementById('txana-overlay').style.display='none'">ปิด</button>
@@ -1469,11 +1459,6 @@ max-width : 560px
   <span class="sheet-item-arrow">›</span>
 </button>
 
-
-
-
-
-
   <button class="sheet-item" onclick="openSheetPage('dividend')">
     <span class="sheet-item-icon">💰</span>
     <div class="sheet-item-text">
@@ -1524,11 +1509,7 @@ max-width : 560px
 const PAGE_LABELS = { summary:'Summary', holdings:'Holdings', analyze:'วิเคราะห์หุ้น', dividend:'ปันผลรายปี', entry:'บันทึก', watchlist:'Watchlist', settings:'ตั้งค่า', help:'Help', taxreport:'Tax Report', screener:'จัดอันดับหุ้น' };
 const SHEET_PAGES = ['dividend', 'watchlist', 'settings', 'help', 'taxreport', 'screener'];
 
-
-
-
 let currentPage = 'summary';
-
 
 function switchPage(page) {
   currentPage = page;   // ← เพิ่มบรรทัดนี้
@@ -1563,16 +1544,13 @@ function switchPage(page) {
     }
   }
 
-
   if (page === 'dividend' && !dividendLoaded) initDividendReport();
   if (page === 'settings' && !settingsPageLoaded) loadSettingsPage();
   if (page === 'watchlist' && !watchlistLoaded)   loadWatchlist();
   if (page === 'taxreport' && !taxReportLoaded) initTaxReportPage();
 
-
   document.getElementById('scroll-area').scrollTop = 0;
 }
-
 
 function refreshCurrent() {
   const page = currentPage;
@@ -1585,7 +1563,6 @@ function refreshCurrent() {
   else if (page === 'taxreport') { taxReportLoaded = false; initTaxReportPage(); }
 
 }
-
 
 // ── More Bottom Sheet ──
 function openMoreSheet() {
@@ -1600,9 +1577,6 @@ function openSheetPage(page) {
   closeMoreSheet();
   switchPage(page);
 }
-
-
-
 
 // ══════════════════════════════
 // เมนู Setting.js
@@ -1731,6 +1705,13 @@ function openEditStockMode(ticker) {
   document.getElementById('sme-trailingStop').value = cfg.trailStopAtrX ?? '';
   document.getElementById('sme-takeProfit').value = cfg.takeProfitPctOverride != null ? (cfg.takeProfitPctOverride * 100) : '';
   document.getElementById('sme-note').value = cfg.note || '';
+ document.getElementById('sme-pfTrailStart').value = cfg.portfolioTrailStartOverride ?? '';
+document.getElementById('sme-pfTrailAtrX').value  = cfg.portfolioTrailAtrXOverride ?? '';
+document.getElementById('sme-minProfitProtect').value = cfg.minProfitProtectOverride ?? '';
+document.getElementById('sme-trailTriggerMode').value = cfg.trailTriggerModeOverride ?? '';
+document.getElementById('sme-trailResetPct').value = cfg.trailResetPctOverride ?? '';
+
+
   overlay.style.display = 'flex';
 }
 
@@ -1739,7 +1720,9 @@ function setEditStockModeMode(mode) {
   document.getElementById('sme-mode').value = mode;
   document.getElementById('sme-mode-fast').classList.toggle('selected', mode === 'Fast');
   document.getElementById('sme-mode-portfolio').classList.toggle('selected', mode === 'Portfolio');
+  document.getElementById('sme-portfolio-trail-fields').style.display = mode === 'Portfolio' ? 'block' : 'none'; // ← เพิ่มบรรทัดนี้
 }
+
 
 function closeEditStockMode() {
   document.getElementById('stockmode-edit-overlay').style.display = 'none';
@@ -1757,6 +1740,11 @@ function submitEditStockMode() {
     cutStopOverride: document.getElementById('sme-cutStop').value,
     trailingStopOverride: document.getElementById('sme-trailingStop').value,
     takeProfitOverride: document.getElementById('sme-takeProfit').value,
+portfolioTrailStartOverride: document.getElementById('sme-pfTrailStart').value,
+portfolioTrailAtrOverride: document.getElementById('sme-pfTrailAtrX').value,
+minProfitProtectOverride: document.getElementById('sme-minProfitProtect').value,
+trailTriggerModeOverride: document.getElementById('sme-trailTriggerMode').value,
+trailResetPctOverride: document.getElementById('sme-trailResetPct').value,
     note: document.getElementById('sme-note').value
   };
   const btn = document.getElementById('sme-save-btn');
@@ -1779,7 +1767,6 @@ function submitEditStockMode() {
     })
     .updateStockMode(data);
 }
-
 
 
 // ══════════════════════════════
@@ -3841,13 +3828,14 @@ function _loadStockDetailRS(ticker, market) {
 
 // helper function fee
 function _feeStatHtml(label, nativeVal, thbVal, cur, valStyle) {
-  const showThb = cur !== '฿'; // หุ้นไทยอยู่แล้วไม่ต้องซ้ำ
+  const showThb = cur !== '฿';
   return `<div class="an-stat">
     <span class="an-stat-lbl">${label}</span>
     <span class="an-stat-val"${valStyle ? ` style="${valStyle}"` : ''}>${fmtNum(nativeVal, cur, '', 2)}</span>
     ${showThb ? `<span style="display:block;font-size:10px;color:var(--muted);margin-top:1px">${fmtNum(thbVal, '฿', '', 2)}</span>` : ''}
   </div>`;
 }
+
 
 // fee
 function _renderFeeCard(fc, cur, currentPrice) {
@@ -3864,23 +3852,14 @@ function _renderFeeCard(fc, cur, currentPrice) {
     ? `<span class="badge ${fc.overTrading==='high'?'stop':'warn'} badge-block" style="margin-top:8px">⚠️ เทรดถี่ (${fc.buyCount+fc.sellCount} ออเดอร์) — ค่าธรรมเนียมอาจกัดกำไร</span>`
     : '';
 
-
-    const isCovered = fc.breakevenPrice !== null && currentPrice !== undefined && currentPrice >= fc.breakevenPrice;
+  const isCovered = fc.breakevenPrice !== null && currentPrice !== undefined && currentPrice >= fc.breakevenPrice;
   const breakevenHtml = fc.breakevenPrice !== null
     ? `<div class="an-stat">
         <span class="an-stat-lbl">ราคาคุ้มทุน</span>
         <span class="an-stat-val" style="color:${isCovered ? 'var(--safe)' : 'var(--stop)'}">${fmtNum(fc.breakevenPrice, cur, '', 2)}</span>
-        <span style="display:block;font-size:10px;color:var(--safe);margin-top:1px">${fc.breakevenIncludesSellFee ? ' (รวมซื้อ+ขาย) ' : ' (รวมเฉพาะซื้อ) '}
-
-        ${isCovered ? ` ✓ คุ้มทุนแล้ว</span>` : ''}
-     
-     
-     
+        <span style="display:block;font-size:10px;color:var(--safe);margin-top:1px">${fc.breakevenIncludesSellFee ? '(รวมซื้อ+ขาย)' : '(รวมเฉพาะซื้อ)'}${isCovered ? ' ✓ คุ้มทุนแล้ว' : ''}</span>
       </div>`
     : '';
-
-
-
 
   const cycleThbSuffix = cur !== '฿' ? ` <span style="color:var(--muted);font-size:10px">(≈${fmtNum(fc.avgFeePerCycleTHB,'฿','',2)})</span>` : '';
 
@@ -3895,15 +3874,10 @@ function _renderFeeCard(fc, cur, currentPrice) {
     ? `<div class="empty-msg" style="text-align:left;padding:4px 0 0;font-size:10.5px;color:var(--muted)">ประมาณ fee ขายที่ ${fc.sellFeeRatePct.toFixed(2)}% ของมูลค่าขาย (อ้างอิงจาก${fc.sellFeeRateSource})</div>`
     : `<div class="empty-msg" style="text-align:left;padding:4px 0 0;font-size:10.5px;color:var(--muted)">⚠️ ยังไม่มีประวัติขายในระบบเลย — ราคาคุ้มทุนนี้ยังไม่รวม fee ตอนขาย</div>`;
 
-
-  
-
-
-
   return `<div class="an-card">
   <div class="an-section-lbl">💸 Fee ซื้อ-ขาย (รวมทุกรอบ)</div>
   <div class="an-stat-grid cols-3">
-    <div class="an-stat"><span class="an-stat-lbl">รอบซื้อ-ขาย</span><span class="an-stat-val">${fc.cycles} รอบ</span></div>
+    <div class="an-stat"><span class="an-stat-lbl">จำนวนรอบซื้อ-ขาย</span><span class="an-stat-val">${fc.cycles} รอบ</span></div>
     ${_feeStatHtml('ซื้อรอบปัจจุบัน', fc.currentCycleBuyFeeNative, fc.currentCycleBuyFeeTHB, cur)}
     ${_feeStatHtml('ซื้อทั้งหมด', fc.totalBuyFeeNative, fc.totalBuyFeeTHB, cur)}
     ${_feeStatHtml('ขายทั้งหมด', fc.totalSellFeeNative, fc.totalSellFeeTHB, cur)}
@@ -3911,7 +3885,7 @@ function _renderFeeCard(fc, cur, currentPrice) {
     ${_feeStatHtml('เฉลี่ย/ออเดอร์', fc.avgFeePerOrderNative, fc.avgFeePerOrderTHB, cur)}
     ${breakevenHtml}
   </div>
-  <div class="empty-msg" style="text-align:left;padding:8px 0 0;font-size:11.5px">📌 Fee เฉลี่ยต่อรอบ: ${fmtNum(fc.avgFeePerCycleNative, cur, '', 2)}${cycleThbSuffix} (${fc.buyCount} ซื้อ / ${fc.sellCount} ขาย)</div>
+  <div class="empty-msg" style="text-align:left;padding:8px 0 0;font-size:11.5px">📌 เฉลี่ยต่อรอบ: ${fmtNum(fc.avgFeePerCycleNative, cur, '', 2)}${cycleThbSuffix} (${fc.buyCount} ซื้อ / ${fc.sellCount} ขาย)</div>
   ${feeVsProfitHtml}
   ${sellFeeNoteHtml}
   ${otBadge}
@@ -3946,6 +3920,131 @@ function _renderRSCard(rs, ticker, market) {
 ⚠️ วัดความแข็งแกร่ง "เทียบตลาด" เท่านั้น ไม่ใช่สัญญาณซื้อ/ขายโดยตรง
   </div>
   <button class="wbtn ghost" style="width:100%; height:40px; margin-top:10px" onclick="_loadStockDetailRS('${ticker}','${market}')">🔄 รีเฟรช RS</button>
+</div>`;
+}
+
+
+// ══════════════════════════════════════════════════════════
+// DAILY CLOSE HISTORY MODAL — ใช้ร่วมกันทั้ง Fast/Portfolio/Watchlist
+// ══════════════════════════════════════════════════════════
+let dailyCloseCtx = null; // { ticker, cur }
+
+function openDailyCloseModal(ticker, cur) {
+  dailyCloseCtx = { ticker, cur: cur || '$' };
+  document.getElementById('dc-ticker-lbl').textContent = ticker;
+  document.getElementById('dc-range-lbl').textContent = '';
+  document.getElementById('dc-summary-box').innerHTML = '';
+  document.getElementById('dc-rows-wrap').innerHTML = '<div class="spin-wrap"><div class="spinner"></div></div>';
+  document.getElementById('dailyclose-overlay').style.display = 'flex';
+
+  google.script.run
+    .withSuccessHandler(d => _renderDailyCloseModal(d))
+    .withFailureHandler(e => {
+      document.getElementById('dc-rows-wrap').innerHTML = `<div class="empty-msg" style="padding:16px 4px;font-size:13px">❌ ${e.message}</div>`;
+    })
+    .getDailyCloseHistory(ticker);
+}
+
+function closeDailyCloseModal() {
+  document.getElementById('dailyclose-overlay').style.display = 'none';
+  dailyCloseCtx = null;
+}
+
+
+function _renderDailyCloseModal(d) {
+  const rowsEl = document.getElementById('dc-rows-wrap');
+  const summaryEl = document.getElementById('dc-summary-box');
+  const rangeEl = document.getElementById('dc-range-lbl');
+
+  if (!d || !d.available) {
+    summaryEl.innerHTML = '';
+    rowsEl.innerHTML = `<div class="empty-msg" style="padding:16px 4px;font-size:13px">${(d && d.reason) || 'ไม่มีข้อมูล'}</div>`;
+    return;
+  }
+
+  const cur = dailyCloseCtx ? dailyCloseCtx.cur : '$';
+  rangeEl.textContent = `${d.startDate} → ${d.endDate} (${d.daysCount} วัน)`;
+
+  const isPos = d.overallChangePct >= 0;
+  summaryEl.innerHTML = `
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:10px">
+  <div style="background:var(--tint2); border:1px solid rgba(99,102,241,.28); border-radius:14px; padding:14px; text-align:center">
+    <div style="font-size:12px; color:var(--muted); font-weight:700; margin-bottom:4px">เปลี่ยนแปลง ${d.daysCount} วัน</div>
+    <div style="font-size:22px; font-weight:800; color:${isPos?'var(--safe)':'var(--stop)'}">${isPos?'+':''}${d.overallChangePct.toFixed(2)}%</div>
+  </div>
+  <div style="background:var(--tint2); border:1px solid rgba(99,102,241,.28); border-radius:14px; padding:14px; text-align:center">
+    <div style="font-size:12px; color:var(--muted); font-weight:700; margin-bottom:4px">ราคาสูงสุดในช่วงนี้</div>
+    <div style="font-size:22px; font-weight:800; color:var(--text)">${d.periodHigh !== null ? fmtNum(d.periodHigh, cur, '', 2) : '—'}</div>
+    ${d.periodHighDate ? `<div style="font-size:11px; color:var(--muted); margin-top:2px">${d.periodHighDate}</div>` : ''}
+  </div>
+</div>
+${_buildDailyCloseInsight(d, cur)}`;
+
+  const rowsHtml = `
+<div style="display:flex; justify-content:space-between; padding:6px 0; font-size:11px; color:var(--muted); font-weight:700; border-bottom:1px solid var(--line)">
+  <span>วันที่</span>
+  <span>สูงสุด</span>
+  <span>ปิด</span>
+  <span style="min-width:64px; text-align:right">% เปลี่ยน</span>
+</div>` + d.rows.map(r => {
+    const pos = r.changePct === null ? null : r.changePct >= 0;
+    const chgHtml = r.changePct === null
+      ? '<span style="color:var(--muted)">—</span>'
+      : `<span style="color:${pos?'var(--safe)':'var(--stop)'}">${pos?'+':''}${r.changePct.toFixed(2)}%</span>`;
+    const isPeriodHigh = d.periodHigh !== null && r.high === d.periodHigh;
+    return `
+<div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid var(--line)">
+  <span style="font-size:13px; color:var(--muted)">${r.date}</span>
+  <span style="font-size:13px; ${isPeriodHigh ? 'color:var(--warn); font-weight:800' : 'color:var(--dim)'}">${fmtNum(r.high, cur, '', 2)}${isPeriodHigh ? ' 🏔️' : ''}</span>
+  <span style="font-size:14px; font-weight:700">${fmtNum(r.close, cur, '', 2)}</span>
+  <span style="font-size:13px; font-weight:700; min-width:64px; text-align:right">${chgHtml}</span>
+</div>`;
+  }).join('');
+
+  rowsEl.innerHTML = rowsHtml;
+}
+
+// ── สร้างข้อสังเกตจากข้อมูลที่มีอยู่แล้ว (คำนวณฝั่ง client ล้วน ไม่ยิง request เพิ่ม) ──
+function _buildDailyCloseInsight(d, cur) {
+  if (!d.rows.length || d.periodHigh === null) return '';
+
+  const currentPrice = d.rows[0].close; // แถวแรก = ล่าสุด (เรียง reverse ไว้แล้ว)
+  const distFromHighPct = ((currentPrice - d.periodHigh) / d.periodHigh) * 100; // ติดลบเสมอ ยกเว้นราคาปัจจุบัน = high
+  const distFromLowPct = d.periodLow ? ((currentPrice - d.periodLow) / d.periodLow) * 100 : null;
+
+  let positionNote, positionCls;
+  if (Math.abs(distFromHighPct) < 3) {
+    positionNote = `🔺 ราคาปัจจุบันใกล้จุดสูงสุดของช่วง ${d.daysCount} วันมาก (ห่างแค่ ${Math.abs(distFromHighPct).toFixed(1)}%) — เป็นจุดที่มักเจอแรงขายทำกำไร ควรระวังถ้าจะไล่ราคา`;
+    positionCls = 'warn';
+  } else if (distFromLowPct !== null && Math.abs(distFromLowPct) < 3) {
+    positionNote = `🔻 ราคาปัจจุบันใกล้จุดต่ำสุดของช่วง ${d.daysCount} วัน (ห่างแค่ ${Math.abs(distFromLowPct).toFixed(1)}%) — อาจเป็นโซนหาจังหวะเข้า แต่ควรเช็คว่าทำไมราคาถึงอ่อนแอ`;
+    positionCls = 'safe';
+  } else {
+    positionNote = `↔️ ราคาปัจจุบันอยู่กลางช่วง — ห่างจากจุดสูงสุด ${Math.abs(distFromHighPct).toFixed(1)}% และห่างจากจุดต่ำสุด ${distFromLowPct !== null ? Math.abs(distFromLowPct).toFixed(1) : '—'}%`;
+    positionCls = 'warn';
+  }
+
+  // ── โซนรอย่อ (ประมาณจากความผันผวนรายวันของหุ้นตัวนี้เอง — ไม่ใช่ตัวเลขตายตัว) ──
+  let pullbackHtml = '';
+  if (d.dailyVolatilityPct && d.dailyVolatilityPct > 0) {
+    const zone1 = d.periodHigh * (1 - d.dailyVolatilityPct / 100);
+    const zone2 = d.periodHigh * (1 - (d.dailyVolatilityPct * 2) / 100);
+    pullbackHtml = `
+<div style="margin-top:10px; padding-top:10px; border-top:1px solid var(--line)">
+  <div style="font-size:12px; font-weight:700; color:var(--muted); margin-bottom:6px">📐 โซนรอย่อโดยประมาณ (จากความผันผวนเฉลี่ยของหุ้นตัวนี้เอง)</div>
+  <div class="an-stat-grid">
+    <div class="an-stat"><span class="an-stat-lbl">ย่อ ~1 เท่าความผันผวน</span><span class="an-stat-val">${fmtNum(zone1, cur, '', 2)}</span></div>
+    <div class="an-stat"><span class="an-stat-lbl">ย่อ ~2 เท่าความผันผวน</span><span class="an-stat-val">${fmtNum(zone2, cur, '', 2)}</span></div>
+  </div>
+  <div class="empty-msg" style="text-align:left; padding:6px 0 0; font-size:11px">ความผันผวนเฉลี่ยต่อวัน ~${d.dailyVolatilityPct.toFixed(2)}% — เป็นการประมาณเชิงสถิติจากพฤติกรรมราคาที่ผ่านมา ไม่ใช่การพยากรณ์ ควรเทียบกับแนวรับ Swing Low จริงในการ์ดด้านบนประกอบด้วย</div>
+</div>`;
+  }
+
+  return `
+<div class="an-card" style="margin-top:10px; padding:14px 16px">
+  <div class="an-section-lbl">📌 การตีความข้อมูล</div>
+  <span class="badge ${positionCls} badge-block">${positionNote}</span>
+  ${pullbackHtml}
 </div>`;
 }
 
@@ -4012,6 +4111,8 @@ function renderStockDetail(d) {
   _loadStockDetailPriceChart(d.ticker, d.market); // ← เพิ่มบรรทัดนี้
   _loadStockDetailBollinger(d.ticker, d.market, d.cur);   // ← เพิ่มบรรทัดนี้
   _loadStockDetailRS(d.ticker, d.market); // ← เพิ่มบรรทัดนี้ (โหลดครั้งเดียว มีปุ่มรีเฟรชในการ์ดเอง)
+  
+  if (d.lane === 'portfolio') _loadStockDetailTrailLock(d.ticker, d.market, d.cur); // ← เพิ่มบรรทัดนี้ (เฉพาะสาย Portfolio)
 
 
 }
@@ -4277,10 +4378,9 @@ ${_buildPositionSummaryHTML(d.ticker, d.market, cur)}
   </div>
   ${!trailingActive ? `<div class="empty-msg" style="text-align:left;padding:8px 0 0;font-size:11.5px">💡 Trailing Stop จะเริ่มทำงานเมื่อกำไรถึงระดับที่ตั้งไว้ ตอนนี้ยังใช้ Hard Stop เป็นเกณฑ์หลัก</div>` : ''}
 
-
-
-
 </div>
+
+<button class="wbtn ghost" style="width:100%; height:44px; margin-bottom:14px" onclick="openDailyCloseModal('${d.ticker}','${cur}')">📅 ดูราคาปิดรายวัน (30 วัน)</button>
  
 ${_renderFeeCard(d.feeCard, cur, d.hero.price)}
 
@@ -4475,6 +4575,11 @@ function _renderPortfolioDetail(d) {
   
   </div>
   </div>
+  <div id="sd-trail-card">${_loadingCardHTML('🔒 Trailing Stop (ล็อกกำไร)')}</div>
+
+<button class="wbtn ghost" style="width:100%; height:44px; margin-bottom:14px" onclick="openDailyCloseModal('${d.ticker}','${cur}')">📅 ดูราคาปิดรายวัน (30 วัน)</button>
+
+
 
 ${_renderFeeCard(d.feeCard, cur, d.positionSummary.currentPrice)}
 
@@ -4854,6 +4959,113 @@ function _colorFromString(str) {
   for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
   return palette[Math.abs(hash) % palette.length];
 }
+
+
+
+
+let _curTrailTicker = null, _curTrailMarket = null;
+
+function _loadStockDetailTrailLock(ticker, market, cur) {
+  _curTrailTicker = ticker; _curTrailMarket = market;
+  const el = document.getElementById('sd-trail-card');
+  if (!el) return;
+
+  google.script.run
+    .withSuccessHandler(t => {
+      const cardEl = document.getElementById('sd-trail-card');
+      if (cardEl) cardEl.innerHTML = _renderTrailLockCard(t, cur);
+    })
+    .withFailureHandler(e => {
+      const cardEl = document.getElementById('sd-trail-card');
+      if (cardEl) cardEl.innerHTML = `<div class="an-card"><div class="an-section-lbl">🔒 Trailing Stop (ล็อกกำไร)</div><div class="empty-msg" style="padding:16px 4px;font-size:13px">❌ ${e.message}</div></div>`;
+    })
+    .getPortfolioTrailingStop(ticker, market);
+}
+
+
+
+// (tier cards + จำนวนหุ้น/กำไร + ปุ่ม mark/reset)
+const triggerModeLabel = { currentPrice: 'ราคาปัจจุบัน (เรียลไทม์)', lastClose: 'ราคาปิดล่าสุด', todayLow: 'ราคาต่ำสุดวันนี้' };
+
+function _renderTrailLockCard(t, cur) {
+  if (!t || !t.success) {
+    return `<div class="an-card"><div class="an-section-lbl">🔒 Trailing Stop (ล็อกกำไร)</div>
+    <div class="empty-msg" style="padding:16px 4px;font-size:13px">${(t && t.error) || 'ไม่มีข้อมูลเพียงพอ'}</div></div>`;
+  }
+
+  if (!t.active) {
+    return `<div class="an-card">
+    <div class="an-section-lbl">🔒 Trailing Stop (ล็อกกำไร)</div>
+    <div class="empty-msg" style="padding:16px 4px;font-size:13px">
+      ยังไม่เริ่มทำงาน — ต้องกำไรถึง ${t.startProfitPct}% ก่อน (ตอนนี้ ${t.returnPct >= 0 ? '+' : ''}${t.returnPct.toFixed(2)}%)
+    </div></div>`;
+  }
+
+  const tierRows = t.tiers.map(tier => `
+    <div class="an-card" style="background:var(--surface2,rgba(255,255,255,.03)); margin-top:8px; padding:12px">
+      <div style="display:flex; justify-content:space-between; align-items:center">
+        <span style="font-weight:700; font-size:13px">${tier.label}</span>
+        <span style="font-size:15px; font-weight:800; color:${tier.executed ? 'var(--muted)' : (tier.triggered ? 'var(--stop)' : 'var(--safe)')}">${fmtNum(tier.stopPrice, cur, '', 2)}</span>
+      </div>
+      ${tier.floored ? `<div style="font-size:10px;color:var(--muted);margin-top:2px">🛡️ ชนพื้นทุน</div>` : ''}
+      <div class="an-stat-grid cols-2" style="margin-top:8px">
+        <div class="an-stat"><span class="an-stat-lbl">ขาย</span><span class="an-stat-val">${fmtNum(tier.sharesToSell, '', '', 4)} หุ้น</span></div>
+        <div class="an-stat"><span class="an-stat-lbl">เหลือ</span><span class="an-stat-val">${fmtNum(tier.sharesRemainingAfter, '', '', 4)} หุ้น</span></div>
+        <div class="an-stat"><span class="an-stat-lbl">มูลค่าที่ได้</span><span class="an-stat-val">${fmtNum(tier.estimatedSellValue, cur, '', 2)}</span></div>
+        <div class="an-stat"><span class="an-stat-lbl">กำไรที่ล็อกได้</span><span class="an-stat-val" style="color:${tier.estimatedProfit >= 0 ? 'var(--safe)' : 'var(--stop)'}">${fmtNum(tier.estimatedProfit, cur, '', 2)}</span></div>
+      </div>
+      ${tier.executed
+        ? `<button class="wbtn ghost" style="width:100%; height:34px; margin-top:8px; font-size:12px" onclick="_resetTrailTier('${_curTrailTicker}','${_curTrailMarket}','${tier.key}')">↩️ ขายไปแล้ว (${new Date(tier.execInfo.execDate).toLocaleDateString('th-TH')}) — รีเซ็ต</button>`
+        : tier.triggered
+          ? `<button class="wbtn" style="width:100%; height:34px; margin-top:8px; font-size:12px; background:var(--stop)" onclick="_markTrailTier('${_curTrailTicker}','${_curTrailMarket}','${tier.key}')">🚨 หลุดแล้ว — mark ว่าขายแล้ว</button>`
+          : `<div style="font-size:10px;color:var(--muted);margin-top:6px">ห่างจากจุดขาย ${tier.distancePct.toFixed(1)}%</div>`
+      }
+    </div>`).join('');
+
+  return `<div class="an-card">
+  <div class="an-section-lbl">🔒 Trailing Stop (ล็อกกำไร) — ${t.daysAvailable} วันนับจากซื้อ</div>
+  <div class="an-stat-grid cols-2">
+    <div class="an-stat"><span class="an-stat-lbl">High สูงสุดนับจากซื้อ</span><span class="an-stat-val">${fmtNum(t.highestHighSinceEntry, cur, '', 2)}</span></div>
+    <div class="an-stat"><span class="an-stat-lbl">ราคาปัจจุบัน</span><span class="an-stat-val">${fmtNum(t.currentPrice, cur, '', 2)}</span></div>
+    <div class="an-stat"><span class="an-stat-lbl">ATR (14 วัน)</span><span class="an-stat-val">${fmtNum(t.atr, cur, '', 2)}</span></div>
+    <div class="an-stat"><span class="an-stat-lbl">พื้นกันทุน</span><span class="an-stat-val">${fmtNum(t.floorPrice, cur, '', 2)} <span style="font-size:10px;color:var(--muted)">(+${t.minProfitProtectPct}%)</span></span></div>
+  </div>
+  <div style="height:1px;background:var(--border);margin:10px 0"></div>
+  <div class="an-stat-grid">${tierRows}</div>
+  <div class="empty-msg" style="text-align:left;padding:8px 0 0;font-size:10.5px;color:var(--muted)">
+    ⚙️ ใช้ ${triggerModeLabel[t.trailTriggerMode] || t.trailTriggerMode} เป็นตัวเช็คว่าหลุด Stop หรือยัง (ปรับได้ในหน้าแก้ไขหุ้น)
+  </div>
+  <div class="empty-msg" style="text-align:left;padding:6px 0 0;font-size:11px;line-height:1.6">💡 เป็นแค่สัญญาณเตือน ไม่ใช่คำสั่งขาย — สาย Portfolio ยังตัดสินใจซื้อ-ขายหลักจากสัดส่วนพอร์ต (ดูการ์ด Rebalance ด้านล่าง) เลือกสัดส่วนขายที่เหมาะกับแผนของคุณเอง</div>
+</div>`;
+}
+
+//ปุ่ม mark/reset (เวอร์ชันสุดท้าย ไม่ส่งค่าคำนวณจาก UI)
+function _markTrailTier(ticker, market, tierKey) {
+  setLoading(true);
+  google.script.run
+    .withSuccessHandler(r => {
+      setLoading(false);
+      if (r.success) { showToast('✅ บันทึกแล้ว', 'ok'); _loadStockDetailTrailLock(ticker, market, sdAnalyzeCtx.cur); }  // ← แก้ตรงนี้
+      else showToast('❌ ' + r.error, 'err');
+    })
+    .withFailureHandler(e => { setLoading(false); showToast('❌ ' + e.message, 'err'); })
+    .markTrailTierExecuted(ticker, market, tierKey);
+}
+
+function _resetTrailTier(ticker, market, tierKey) {
+  setLoading(true);
+  google.script.run
+    .withSuccessHandler(r => {
+      setLoading(false);
+      if (r.success) { showToast('↩️ รีเซ็ต ' + tierKey + ' แล้ว', 'ok'); _loadStockDetailTrailLock(ticker, market, sdAnalyzeCtx.cur); }  // ← แก้ตรงนี้
+      else showToast('❌ ' + r.error, 'err');
+    })
+    .withFailureHandler(e => { setLoading(false); showToast('❌ ' + e.message, 'err'); })
+    .resetTrailTierState(ticker, market, tierKey);
+}
+
+
+
 
 // ══════════════════════════════════════════════════════════
 // VIEW 2: Rebalance ภาพรวม
@@ -5665,11 +5877,13 @@ function renderDividendReport() {
     const diffTxt = !it.inPortfolio
       ? 'ไม่มีในพอร์ตแล้ว'
       : (it.diffPct > 0 ? '+' : '') + it.diffPct.toFixed(1) + '% vs สัดส่วนพอร์ต';
-    const yocTxt = (it.inPortfolio && it.costVal > 0)
-      ? `<div class="legend-yoc">🌱 Yield on Cost: ${it.yieldOnCost.toFixed(2)}% (ต้นทุน ${fmtNum(it.costVal,cur,'',0)})</div>`
-      : '';
-    legendHtml += `
-<div class="legend-item">
+  const yocTxt = (it.inPortfolio && it.costVal > 0)
+  ? `<div class="legend-yoc">🌱 Yield on Cost: ${it.yieldOnCost.toFixed(2)}% (ต้นทุน ${isUS ? fmtNum(it.costValNative,'$','',0) + ' ≈ ' : ''}${fmtNum(it.costVal,'฿','',0)})</div>`
+  : '';
+
+  legendHtml += `
+<div class="legend-item" style="cursor:pointer" onclick="openDividendHistory('${it.ticker}','${isUS ? 'US' : 'TH'}')">
+
   <div class="legend-top">
     <div class="legend-left">
       <span class="legend-dot" style="background:${color}"></span>
@@ -5771,6 +5985,7 @@ function buildDividendInsight(list, total, portTotal, isUS, year) {
   ${items.join('')}
 </div>`;
 }
+
 
 // ── ภาษีหัก ณ ที่จ่าย (ประมาณการ) ──
 // หมายเหตุ: ยอดที่บันทึกในระบบเป็นยอดสุทธิ (หลังหักภาษี ณ ที่จ่ายแล้ว)
@@ -5894,6 +6109,98 @@ ${monthsHtml}
 ${yoyHtml}`;
 }
 
+function openDividendHistory(ticker, market) {
+  document.getElementById('dh-title').textContent = `📜 ประวัติปันผล — ${ticker}`;
+  document.getElementById('dh-content').innerHTML = '<div class="spin-wrap"><div class="spinner"></div></div>';
+  document.getElementById('dividend-history-overlay').style.display = 'flex';
+
+google.script.run
+  .withSuccessHandler(d => {
+    try {
+      document.getElementById('dh-content').innerHTML = _renderDividendHistory(d);
+    } catch (err) {
+      document.getElementById('dh-content').innerHTML = `<div class="empty-msg" style="padding:16px 4px;font-size:13px">❌ ${err.message}</div>`;
+    }
+  })
+  .withFailureHandler(e => {
+    document.getElementById('dh-content').innerHTML = `<div class="empty-msg" style="padding:16px 4px;font-size:13px">❌ ${e.message}</div>`;
+  })
+  .getDividendHistoryForTicker(ticker, market);
+
+}
+
+function closeDividendHistory() {
+  document.getElementById('dividend-history-overlay').style.display = 'none';
+}
+
+
+ function _renderDividendHistory(d) {
+  if (!d || !d.success) {
+    return `<div class="empty-msg" style="padding:16px 4px;font-size:13px">${(d && d.error) || 'โหลดข้อมูลไม่สำเร็จ'}</div>`;
+  }
+  if (!d.years.length) {
+    return `<div class="empty-msg" style="padding:16px 4px;font-size:13px">ยังไม่มีประวัติปันผลของหุ้นตัวนี้</div>`;
+  }
+
+  const isUS = d.market === 'US';
+  const totalNative = isUS ? d.years.reduce((s, y) => s + (y.totalGrossNative || 0), 0) : 0;
+  const avgNative = isUS && d.years.length ? totalNative / d.years.length : 0;
+
+  const summaryHtml = `
+  <div class="an-stat-grid cols-2" style="margin-bottom:12px">
+    <div class="an-stat">
+      <span class="an-stat-lbl">รวมทุกปี</span>
+      <span class="an-stat-val">${isUS ? fmtNum(totalNative,'$','',2) : fmtNum(d.totalNetTHB,'฿','',2)}</span>
+      ${isUS ? `<div style="font-size:11px; color:var(--muted)">${fmtNum(d.totalNetTHB,'฿','',2)}</div>` : ''}
+    </div>
+    <div class="an-stat">
+      <span class="an-stat-lbl">เฉลี่ย/ปี</span>
+      <span class="an-stat-val">${isUS ? fmtNum(avgNative,'$','',2) : fmtNum(d.avgPerYear,'฿','',2)}</span>
+      ${isUS ? `<div style="font-size:11px; color:var(--muted)">${fmtNum(d.avgPerYear,'฿','',2)}</div>` : ''}
+    </div>
+    <div class="an-stat"><span class="an-stat-lbl">จำนวนงวดทั้งหมด</span><span class="an-stat-val">${d.totalPayments} งวด</span></div>
+    <div class="an-stat"><span class="an-stat-lbl">จำนวนปีที่มีข้อมูล</span><span class="an-stat-val">${d.years.length} ปี</span></div>
+  </div>`;
+
+  const yearsHtml = d.years.map(y => {
+    const yoyHtml = (typeof y.yoyPct === 'number' && !isNaN(y.yoyPct))
+      ? `<span style="font-size:11px; color:${y.yoyPct >= 0 ? 'var(--safe)' : 'var(--stop)'}; margin-left:6px">${y.yoyPct >= 0 ? '+' : ''}${y.yoyPct.toFixed(1)}% YoY</span>`
+      : '';
+
+    const paymentsHtml = y.payments.map(p => {
+      const mainVal = isUS ? fmtNum(p.grossNative, '$', '', 2) : fmtNum(p.netThb, '฿', '', 2);
+      const subVal = isUS ? fmtNum(p.netThb, '฿', '', 2) : '';
+      return `
+      <div style="display:flex; justify-content:space-between; padding:6px 0; border-top:1px solid var(--border)">
+        <div>
+          <div style="font-size:12px">${p.payDate}${p.round ? ' · ' + p.round : ''}</div>
+          <div style="font-size:10px; color:var(--muted)">${p.shares} หุ้น × ${p.perShare} ${p.currency}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-weight:700; font-size:13px">${mainVal}</div>
+          ${subVal ? `<div style="font-size:10px; color:var(--muted)">${subVal}</div>` : ''}
+        </div>
+      </div>`;
+    }).join('');
+
+    return `
+    <div class="an-card" style="margin-top:8px; padding:12px">
+      <div style="display:flex; justify-content:space-between; align-items:center">
+        <span style="font-weight:800; font-size:14px">ปี ${y.year}${yoyHtml}</span>
+        <div style="text-align:right">
+          <span style="font-weight:800; font-size:15px">${isUS ? fmtNum(y.totalGrossNative, '$', '', 2) : fmtNum(y.totalNetTHB,'฿','',2)}</span>
+          ${isUS ? `<div style="font-size:11px; color:var(--muted)">${fmtNum(y.totalNetTHB,'฿','',2)}</div>` : ''}
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--muted); margin-top:2px">${y.payments.length} งวด</div>
+      <div style="margin-top:6px">${paymentsHtml}</div>
+    </div>`;
+  }).join('');
+
+  return summaryHtml + yearsHtml;
+}
+
+
 // ══════════════════════════════
 // เมนู TaxReport.js
 // สรุปกำไร/ขาดทุนหุ้นสหรัฐรายปี (getUSCapitalGainTaxReport)
@@ -5975,18 +6282,10 @@ function renderTaxReport() {
   <div class="pl-row"><span class="k">🟢 กำไรรวม (จากรายการที่กำไร)</span><span class="v pos">${fmtNum(s.totalGainTHB,'฿','',2)}</span></div>
   <div class="pl-row"><span class="k">🔴 ขาดทุนรวม (จากรายการที่ขาดทุน)</span><span class="v neg">${fmtNum(s.totalLossTHB,'฿','',2)}</span></div>
 
-
-
-
-
 <div class="pl-total-box">
   <span class="pl-total-lbl">สุทธิ</span>
   <span class="pl-total-val ${s.netGainTHB>=0?'pos':'neg'}">${fmtNum(s.netGainTHB,'฿','',2)}</span>
 </div>
-
-
-
-
 
   ${s.missingRateCount > 0 ? `<div class="empty-msg" style="text-align:left;padding:10px 0 0;font-size:12px;color:var(--warn)">⚠️ มี ${s.missingRateCount} รายการที่ไม่ได้บันทึกอัตราแลกเปลี่ยนไว้ตอนขาย ระบบใช้เรทปัจจุบันแทน (อาจไม่แม่นยำ)</div>` : ''}
 </div>`;
@@ -6043,7 +6342,7 @@ ${salesRowsHtml}`;
     `<div class="an-timestamp">🕐 อัปเดตล่าสุด ${d.updatedAt}</div>`;
 }
 
- ///////////แก้เอง////////////////
+
 // ═════════════════════════════════════════════════════════
 // เมนู Watchlist.js
 // WATCHLIST — แปะเพิ่มในบล็อก <script> เดิมของ index.html
@@ -6240,8 +6539,6 @@ function _loadCardTrends(items) {
 }
 
 
-
-
 // ── กราฟเส้นราคาย้อนหลังในหน้าวิเคราะห์หุ้นรายตัว (90 วันล่าสุด) ──
 function _loadStockDetailPriceChart(ticker, market) {
   const el = document.getElementById('sd-price-chart');
@@ -6355,7 +6652,7 @@ function renderWatchlistAnalysis(d, ticker, market) {
   <div class="empty-msg" style="text-align:left; padding:10px 0 0; font-size:12px" id="wl-mos-summary-line">MOS: ⏳ กำลังคำนวณ...</div>
 </div>
 
-
+<button class="wbtn ghost" style="width:100%; height:44px; margin-bottom:14px" onclick="openDailyCloseModal('${d.ticker}','${cur}')">📅 ดูราคาปิดรายวัน (30 วัน)</button>
 
 <!-- ══ Support / Resistance ══ -->
 <button class="wbtn ghost" id="wl-backfill-btn" style="width:100%; height:48px; margin-bottom:14px" onclick="backfillAndRefreshLevels()">📥 ดึงราคาย้อนหลัง 6 เดือน (สำหรับแนวรับ/แนวต้าน)</button>
@@ -6412,7 +6709,6 @@ function renderWatchlistAnalysis(d, ticker, market) {
     <div class="spinner" style="display:inline-block"></div>
   </div>
 </div>
-
 
 
 <!-- ══ Risk ══ -->
@@ -6533,7 +6829,6 @@ function _screenerNowThai() {
   const pad = n => String(n).padStart(2, '0');
   return `${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
 }
-
 
 
 // ══════════════════════════════════════════════════════════
@@ -6842,7 +7137,6 @@ function applyWatchlistSelection(ticker, market, price) {
   fetchAutoSupportPrice(ticker.toUpperCase(), market); // ← แก้แล้ว ใช้พารามิเตอร์ตรงๆ
 }
 
-
 function renderWatchlistZonePreview() {
   const el = document.getElementById('wl-zone-preview');
   const sel = watchlistAddState.selected;
@@ -6891,7 +7185,6 @@ function submitWatchlistAdd() {
     .addWatchlistItem(data);
 }
 
-
 // ══════════════════════════════════════════════════════════
 // วิเคราะห์หุ้นใน Watchlist
 // ══════════════════════════════════════════════════════════
@@ -6922,10 +7215,6 @@ function _zoneToRecommendationClient(zone) {
   if (zone === 'watch') return 'รอสัญญาณเพิ่ม';
   return 'เฝ้าดู';
 }
-
-
-
-
 
 // ── โหลด/รีเฟรชการ์ดแนวรับ-แนวต้าน — reuse _renderSupportCard()/_renderResistanceCard()
 //    เดิม แยกยิงจาก getWatchlistAnalysis() หลัก เพื่อไม่บล็อกหน้าจอถ้าโหลดช้า
@@ -7018,8 +7307,6 @@ function _updateRiskFromLevels() {
   _finalizeRecommendation();
 }
 
-
-
 // ── Checklist: Reward:Risk อย่างน้อย 1:1 ──
 function _updateRRChecklist() {
   const el = document.getElementById('wl-checklist-rr');
@@ -7036,7 +7323,6 @@ function _updateRRChecklist() {
   const ok = rr >= 1;
   el.innerHTML = `<div class="sd-checklist-item"><span class="ic ${ok?'ok':''}">${ok?'✅':'❌'}</span><span>Reward:Risk อย่างน้อย 1:1 (ปัจจุบัน 1:${rr.toFixed(2)})${!ok ? ' — เสี่ยงมากกว่าที่จะได้' : ''}</span></div>`;
 }
-
 
 // ── รวมผล MOS + RR เพื่อปรับ Recommendation ด้านบน (ลด confidence ถ้าแพงเกินไป/เสี่ยงเกินไป) ──
 function _finalizeRecommendation() {
@@ -7071,7 +7357,6 @@ function _finalizeRecommendation() {
     extraEl.innerHTML = downgradeReasons.map(r => `<div class="warn-item"><span class="ic">⚠️</span><span>${r}</span></div>`).join('');
   }
 }
-
 
 // ── เติมข้อ Checklist "ใกล้แนวต้าน" ที่ต้องรอข้อมูลแนวต้านมาก่อน ──
 function _updateChecklistResistance(r) {
@@ -7298,8 +7583,6 @@ function _loadWatchlistBollinger(ticker, market, cur) {
 }
 
 
-
-
 // ── ทางเลือก Stop Loss จาก ATR (2×ATR ใต้ราคาปัจจุบัน) — แสดงคู่กับแนวรับเดิม ไม่ทับ ──
 function _renderAtrStopSuggestion() {
   const el = document.getElementById('wl-atr-stop-row');
@@ -7316,8 +7599,6 @@ function _renderAtrStopSuggestion() {
 ${manualStop ? `<br>(เทียบกับแนวรับที่ตั้งไว้: ${fmtNum(manualStop, cur, '', 2)} — ${atrStop < manualStop ? 'ATR ให้ระยะกว้างกว่า เผื่อความผันผวนมากกว่า' : 'แนวรับให้ระยะแคบกว่า ATR'})` : ''}
 </div>`;
 }
-
-
 
 
 // ── ปุ่ม 📥 — backfill แล้วรีเฟรชทั้ง D (แนวรับ/แนวต้าน) และ MACD ──
@@ -7417,9 +7698,6 @@ function backfillThenFetchSupport(ticker, market) {
 // ══════════════════════════════
 
 // ══════════════════════════════════════════════════════════
-// PORTFOLIO PERFORMANCE — กราฟย้อนหลัง + เทียบ Benchmark
-// ══════════════════════════════════════════════════════════
-// ══════════════════════════════════════════════════════════
 // PORTFOLIO HISTORY — กราฟเส้นแบบมีแกนจริง
 // ══════════════════════════════════════════════════════════
 function buildAxisLineChart(points) {
@@ -7510,9 +7788,6 @@ function loadPortfolioHistoryChart() {
     })
     .getPortfolioValueHistory();
 }
-
-
-
 
 // ══════════════════════════════════════════════════════════
 // เทียบผลตอบแทนกับ BENCHMARK
@@ -8235,16 +8510,19 @@ function openStockModeStep2(ticker, market) {
   document.getElementById('sm-assetType').value = 'หุ้น';
   setStockModeMode('Fast');
   document.getElementById('sm-trendGroup').value = 'Growth';
-  ['sm-targetWeight','sm-cutStop','sm-trailingStop','sm-takeProfit'].forEach(id => document.getElementById(id).value = '');
+  ['sm-targetWeight','sm-cutStop','sm-trailingStop','sm-takeProfit','sm-pfTrailStart','sm-pfTrailAtrX'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('sm-note').value = '';
   document.getElementById('stockmode-overlay').style.display = 'flex';
 }
+
 
 function setStockModeMode(mode) {
   document.getElementById('sm-mode').value = mode;
   document.getElementById('sm-mode-fast').classList.toggle('selected', mode === 'Fast');
   document.getElementById('sm-mode-portfolio').classList.toggle('selected', mode === 'Portfolio');
+  document.getElementById('sm-portfolio-trail-fields').style.display = mode === 'Portfolio' ? 'grid' : 'none';
 }
+
 
 function skipStockModeStep2() {
   stockModeStep2Target = null;
@@ -8264,8 +8542,11 @@ function submitStockModeStep2() {
     cutStopOverride: document.getElementById('sm-cutStop').value,
     trailingStopOverride: document.getElementById('sm-trailingStop').value,
     takeProfitOverride: document.getElementById('sm-takeProfit').value,
+    portfolioTrailStartOverride: document.getElementById('sm-pfTrailStart').value,   // ← เพิ่ม
+    portfolioTrailAtrOverride: document.getElementById('sm-pfTrailAtrX').value,      // ← เพิ่ม
     note: document.getElementById('sm-note').value.trim()
   };
+
 
   setLoading(true);
   google.script.run
@@ -8283,9 +8564,6 @@ function submitStockModeStep2() {
     .withFailureHandler(e=>{ setLoading(false); showToast('❌ ' + e.message, 'err'); })
     .saveNewStockMode(data);
 }
-
-
-
 
 function submitDiv(){
   const data={
@@ -8453,6 +8731,7 @@ window.addEventListener('DOMContentLoaded',()=>{
 </script>
 </body>
 </html>
+
 
 ## alert_log.gs
 // ========================================
@@ -21593,6 +21872,22 @@ function getWatchlistRiskMetrics(ticker, market) {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // ══════════════════════════════════════════════════════════
 // Yahoo crumb + cookie — จำเป็นสำหรับ endpoint quoteSummary (fundamentals)
 // ตั้งแต่ Yahoo เริ่มบังคับ auth แบบนี้ (v8/finance/chart ยังไม่ต้องใช้)
@@ -21991,6 +22286,199 @@ function _extCalcADX(ohlc, period) {
 //    return Math.round((v + Number.EPSILON) * f) / f;
 //  }
 //}
+
+
+/** ATR(14) จาก OHLC array — แยกออกมาเป็น helper ใช้ร่วมกับ getWatchlistRiskMetrics ได้ */
+function _calcATR14(ohlc) {
+  const clean = ohlc.filter(x =>
+    Number.isFinite(x.high) && Number.isFinite(x.low) && Number.isFinite(x.close)
+  );
+  if (clean.length < 2) return 0;
+
+  const trList = [];
+  for (let i = 1; i < clean.length; i++) {
+    const tr = Math.max(
+      clean[i].high - clean[i].low,
+      Math.abs(clean[i].high - clean[i - 1].close),
+      Math.abs(clean[i].low - clean[i - 1].close)
+    );
+    trList.push(tr);
+  }
+  const last14 = trList.slice(-14);
+  return last14.length ? last14.reduce((s, v) => s + v, 0) / last14.length : 0;
+}
+
+
+// ══════════════════════════════════════════════════════════
+// TRAILING STOP สายถือ (Portfolio) — ล็อกกำไรแบบหลวม เน้นถือยาว ไม่ใช่คำสั่งขายเด็ดขาด
+// ══════════════════════════════════════════════════════════
+const PORTFOLIO_TRAIL_START_PROFIT_PCT = 10;  // เริ่มทำงานเมื่อกำไร ≥ 10%
+const PORTFOLIO_TRAIL_ATR_MULTIPLIER   = 3.5; // หลวมกว่า Fast (1-2x) เพราะถือยาว
+
+//ใช้ **Highest High** (ไม่ใช่ Highest Close), **returnPct จาก currentPrice เทียบ avgCost ตรงๆ** (ไม่พึ่ง unrealizedPL), **tier เรียงจาก 25%→50%→100%** (ตึงสุด→หลวมสุด, ทยอยลดความเสี่ยง), มี floor กันหลุดต่ำกว่าทุน, คำนวณจำนวนหุ้น/กำไรต่อ tier, และผูกกับ Execution Log
+
+function getPortfolioTrailingStop(ticker, market) {
+  try {
+    ticker = String(ticker || '').trim().toUpperCase();
+    const eff = getEffectiveRiskParams(ticker);
+
+    const h = getHoldingsData();
+    const arr = (market === 'TH') ? h.th : h.us;
+    const holding = (arr || []).find(x => x.ticker === ticker);
+    if (!holding) return { success: false, error: 'ไม่พบ ' + ticker + ' ใน Holdings' };
+
+    const ohlcRaw = _getOHLCFromExternalLog(ticker);
+    const ohlc = (ohlcRaw || []).filter(x =>
+      x && Number.isFinite(x.high) && Number.isFinite(x.low) && Number.isFinite(x.close)
+    );
+    if (ohlc.length < 15) {
+      return { success: false, error: 'ข้อมูลราคาย้อนหลังไม่พอ หรือมีข้อมูลผิดรูปแบบ (ต้องการอย่างน้อย 15 วันที่ใช้ได้จริง)' };
+    }
+
+    const firstBuyDate = _getFirstBuyDateForTicker(ticker, market);
+    const sinceEntry = firstBuyDate ? ohlc.filter(x => new Date(x.date) >= firstBuyDate) : ohlc;
+    if (sinceEntry.length < 2) {
+      return { success: false, error: 'ถือมาน้อยเกินไป ยังไม่มีข้อมูลราคาพอคำนวณ' };
+    }
+
+    const atr = _calcATR14(ohlc);
+
+    // ── Highest HIGH (ไม่ใช่ Close) ──
+    const highestHighSinceEntry = Math.max(...sinceEntry.map(x => x.high));
+
+    const lastBar = ohlc[ohlc.length - 1];
+    const currentPrice = Number.isFinite(holding.priceNow) ? holding.priceNow : lastBar.close;
+
+    const triggerPriceMap = {
+      currentPrice: currentPrice,
+      lastClose: lastBar.close,
+      todayLow: lastBar.low
+    };
+    const triggerPrice = triggerPriceMap[eff.trailTriggerMode] ?? lastBar.close;
+
+    // ── returnPct จาก currentPrice ตรงๆ ──
+    const returnPct = holding.avgCost > 0
+      ? ((currentPrice - holding.avgCost) / holding.avgCost) * 100
+      : 0;
+
+    const active = returnPct >= eff.portfolioTrailStartProfitPct;
+    const floorPrice = holding.avgCost * (1 + eff.minProfitProtectPct / 100);
+
+    // ── Tier เรียง 25% (ตึงสุด) → 50% → 100% (หลวมสุด) : ทยอยลดความเสี่ยง ──
+    const tierDefs = [
+      { key: 'sell25',  label: 'ขาย 25% ล็อกกำไรบางส่วน', multiplier: eff.portfolioTrailAtrX * 0.5, fraction: 0.25 },
+      { key: 'sell50',  label: 'ขาย 50% ปล่อยครึ่งวิ่งต่อ', multiplier: eff.portfolioTrailAtrX * 1.0, fraction: 0.50 },
+      { key: 'sell100', label: 'ขาย 100% (ออกทั้งหมด)',   multiplier: eff.portfolioTrailAtrX * 1.5, fraction: 1.00 }
+    ];
+
+    const executedTiers = _getExecutedTiers(ticker, market, highestHighSinceEntry, eff.trailResetPct);
+
+    const tiers = tierDefs.map(t => {
+      const rawStop = highestHighSinceEntry - atr * t.multiplier;
+      const stopPrice = Math.max(rawStop, floorPrice);
+      const floored = rawStop < floorPrice;
+      const execInfo = executedTiers.get(t.key) || null;
+      const executed = !!execInfo;
+      const triggered = active && !executed && triggerPrice <= stopPrice;
+      const distancePct = active && currentPrice > 0 ? ((currentPrice - stopPrice) / currentPrice) * 100 : null;
+
+      const sharesToSell = holding.sharesRemain * t.fraction;
+      const sharesRemainingAfter = holding.sharesRemain - sharesToSell;
+      const estimatedSellValue = sharesToSell * stopPrice;
+      const estimatedProfit = sharesToSell * (stopPrice - holding.avgCost);
+
+      return { ...t, stopPrice, floored, triggered, executed, execInfo, distancePct,
+        sharesToSell, sharesRemainingAfter, estimatedSellValue, estimatedProfit };
+    });
+
+    return {
+      success: true, available: true, active,
+      highestHighSinceEntry, currentPrice, triggerPrice,
+      trailTriggerMode: eff.trailTriggerMode,
+      atr, baseMultiplier: eff.portfolioTrailAtrX,
+      startProfitPct: eff.portfolioTrailStartProfitPct,
+      minProfitProtectPct: eff.minProfitProtectPct,
+      floorPrice, avgCost: holding.avgCost, sharesRemain: holding.sharesRemain,
+      returnPct, daysAvailable: sinceEntry.length,
+      tiers
+    };
+  } catch (e) {
+    logError('getPortfolioTrailingStop', e);
+    return { success: false, error: e.message };
+  }
+}
+
+
+// ══════════════════════════════════════════════════════════
+// ราคาปิดรายวัน 30 วันล่าสุด + % เปลี่ยนแปลงต่อวัน + % เปลี่ยนแปลงรวม 30 วัน
+// ใช้เปิดใน Modal จากหน้า Stock Detail (Fast/Portfolio) และ Watchlist Analyze
+// ══════════════════════════════════════════════════════════
+function getDailyCloseHistory(ticker) {
+  try {
+    const history = _getClosesFromExternalLog(ticker);
+    if (!history) {
+      return { available: false, reason: 'ไม่พบข้อมูลราคาย้อนหลังของ ' + ticker + ' ใน Daily_Close_Log' };
+    }
+    if (history.length < 2) {
+      return { available: false, reason: 'มีข้อมูลไม่พอ (ต้องการอย่างน้อย 2 วัน)' };
+    }
+
+    const last31 = history.slice(-31);
+    const rows = [];
+    for (let i = 1; i < last31.length; i++) {
+      const prevClose = last31[i - 1].close;
+      const close = last31[i].close;
+      const high = last31[i].high;
+      const low = last31[i].low; // ← เพิ่ม
+      const changePct = prevClose > 0 ? ((close - prevClose) / prevClose) * 100 : null;
+      rows.push({
+        date: Utilities.formatDate(new Date(last31[i].date), 'Asia/Bangkok', 'dd/MM/yyyy'),
+        close, high, low, changePct
+      });
+    }
+    rows.reverse();
+
+    const first = last31[0].close;
+    const last = last31[last31.length - 1].close;
+    const overallChangePct = first > 0 ? ((last - first) / first) * 100 : null;
+
+    const highsInRange = rows.map(r => r.high).filter(v => isFinite(v) && v > 0);
+    const periodHigh = highsInRange.length ? Math.max(...highsInRange) : null;
+    const periodHighRow = periodHigh !== null ? rows.find(r => r.high === periodHigh) : null;
+
+    // ── เพิ่ม: จุดต่ำสุดของช่วง ──
+    const lowsInRange = rows.map(r => r.low).filter(v => isFinite(v) && v > 0);
+    const periodLow = lowsInRange.length ? Math.min(...lowsInRange) : null;
+    const periodLowRow = periodLow !== null ? rows.find(r => r.low === periodLow) : null;
+
+    // ── เพิ่ม: ค่าเบี่ยงเบนมาตรฐานของ %เปลี่ยนแปลงรายวัน (ใช้ประมาณระยะย่อ "ปกติ") ──
+    const validChanges = rows.map(r => r.changePct).filter(v => v !== null);
+    let dailyVolatilityPct = null;
+    if (validChanges.length >= 5) {
+      const mean = validChanges.reduce((s, v) => s + v, 0) / validChanges.length;
+      const variance = validChanges.reduce((s, v) => s + Math.pow(v - mean, 2), 0) / validChanges.length;
+      dailyVolatilityPct = Math.sqrt(variance);
+    }
+
+    return {
+      available: true,
+      ticker,
+      rows,
+      daysCount: rows.length,
+      overallChangePct,
+      periodHigh,
+      periodHighDate: periodHighRow ? periodHighRow.date : null,
+      periodLow,                                                  // ← เพิ่ม
+      periodLowDate: periodLowRow ? periodLowRow.date : null,      // ← เพิ่ม
+      dailyVolatilityPct,                                         // ← เพิ่ม
+      startDate: rows[rows.length - 1].date,
+      endDate: rows[0].date
+    };
+  } catch (e) {
+    logError('getDailyCloseHistory', e);
+    return { available: false, reason: e.message };
+  }
+}
 
 
 
