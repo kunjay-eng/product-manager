@@ -74,6 +74,11 @@
       </div>
     </div>
 
+<div class="an-card" id="buyplan-alert-card" style="display:none">
+  <div class="an-section-lbl">🛒 ถึงจุดซื้อแล้ว</div>
+  <div id="buyplan-alert-content"></div>
+</div>
+
     <div class="an-card">
       <div class="an-section-lbl">🥧 สัดส่วนพอร์ต</div>
       <div class="donut-wrap" id="sum-alloc-donut"></div>
@@ -321,6 +326,11 @@
 </div>
 
 
+
+
+
+
+
 </div>
 <!-- /page-analyze -->
 
@@ -336,7 +346,13 @@
       <span class="year-val" id="div-year-val">—</span>
       <button class="year-btn" onclick="shiftDividendYear(1)">▶</button>
     </div>
+    <div class="an-card" id="divplan-card">
+  <div class="an-section-lbl">🎯 แผนเงินปันผลทั้งปี</div>
+  <div id="divplan-content"><div class="spin-wrap"><div class="spinner"></div></div></div>
+</div>
 
+
+    
     <div class="segtabs">
       <button class="segtab active c-us" id="dst-us" onclick="switchDividendSub('us')">🇺🇸 หุ้นสหรัฐ</button>
       <button class="segtab"            id="dst-th" onclick="switchDividendSub('th')">🇹🇭 หุ้นไทย</button>
@@ -674,6 +690,18 @@
   </div>
 </div>
 
+
+<div class="more-card action-card">
+  <div class="more-card-head">📅 เติมปีปันผลล่วงหน้า</div>
+  <div class="more-card-body">
+    ตารางสรุปปันผลรายปีจะเติมปีใหม่ให้อัตโนมัติทุกเดือน (เผื่อล่วงหน้า 5 ปี) แต่กดปุ่มนี้เพื่อเติมทันทีได้เลยถ้าไม่อยากรอ
+    <button class="action-btn" id="divyears-btn" onclick="runAddDividendYearsWeb()">📅 เติมปีที่ขาด</button>
+    <div id="divyears-result"></div>
+  </div>
+</div>
+
+
+
 <div class="more-card">
   <div class="more-card-head">💱 ปุ่มลอยคำนวณอัตราแลกเปลี่ยน</div>
   <div class="more-card-body">
@@ -845,6 +873,43 @@
 
 <!-- /page-watchlist -->
 
+<!-- ════ PAGE: หุ้นที่สนใจ (Interest List) ════ -->
+<div class="page" id="page-interest">
+  <div class="segtabs">
+    <button class="segtab active c-us" id="int-mkt-us" onclick="switchInterestMarket('US')">🇺🇸 หุ้นสหรัฐ</button>
+    <button class="segtab" id="int-mkt-th" onclick="switchInterestMarket('TH')">🇹🇭 หุ้นไทย</button>
+  </div>
+
+  <div class="an-card">
+    <div class="an-section-lbl">➕ เพิ่มหุ้นที่สนใจ</div>
+    <div class="field">
+      <label>ชื่อหุ้น Ticker</label>
+      <input type="text" id="int-add-ticker" placeholder="เช่น PLTR, IVL" autocapitalize="characters">
+    </div>
+    <div class="field">
+      <label>โน้ต (ไม่บังคับ)</label>
+      <input type="text" id="int-add-note" placeholder="เช่น เพื่อนแนะนำ, เห็นข่าว">
+    </div>
+    <button class="submit-btn btn-us" onclick="submitInterestAdd()">➕ เพิ่มเข้าลิสต์</button>
+  </div>
+
+  <div class="section-label" style="margin-top:16px">📋 รายชื่อที่เก็บไว้</div>
+  <div id="int-cards"><div class="spin-wrap"><div class="spinner"></div></div></div>
+</div>
+<!-- /page-interest -->
+
+<!-- ══ Confirm Remove Modal (Interest List) ══ -->
+<div id="int-confirm-overlay" style="display:none">
+  <div class="confirm-box">
+    <div class="confirm-icon">🗑️</div>
+    <div class="confirm-title">ลบออกจากลิสต์?</div>
+    <div class="confirm-body">ต้องการลบ <b id="int-confirm-ticker"></b> ออกจากรายชื่อหุ้นที่สนใจใช่ไหม</div>
+    <div class="confirm-actions">
+      <button class="confirm-btn cancel" onclick="closeIntConfirm()">ยกเลิก</button>
+      <button class="confirm-btn danger" onclick="confirmIntRemove()">ลบออก</button>
+    </div>
+  </div>
+</div>
 
 
 <!-- page-screener -->
@@ -1027,6 +1092,39 @@
 
     <button class="submit-btn btn-us" id="sme-save-btn" onclick="submitEditStockMode()">✅ บันทึกการแก้ไข</button>
     <button class="wbtn ghost" style="width:100%; height:48px; margin-top:4px" onclick="closeEditStockMode()">ยกเลิก</button>
+  </div>
+</div>
+
+
+<!-- ══ Flexible Buy Plan Modal — ใช้ร่วมกันทั้ง Fast/Portfolio/Watchlist ══ -->
+<div id="fbp-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:60; align-items:flex-end; justify-content:center; padding:0">
+  <div style="background:var(--surface); border-radius:20px 20px 0 0; padding:22px 20px 28px; max-width:460px; width:100%; max-height:90vh; overflow-y:auto; box-shadow:0 -8px 30px rgba(0,0,0,.4)">
+    <div style="font-size:17px; font-weight:800; margin-bottom:4px">🧨 ตั้งแผนแบ่งไม้ — <span id="fbp-ticker-lbl"></span></div>
+    <div style="font-size:12.5px; color:var(--muted); margin-bottom:6px" id="fbp-ref-price-note">กำลังดึงราคาอ้างอิง...</div>
+    <div style="font-size:11.5px; color:var(--muted); margin-bottom:16px">ไม้ 2-3 ต้องมีราคาต่ำกว่าไม้ก่อนหน้าเสมอ (แผนแบบไล่ซื้อตอนราคาย่อ)</div>
+
+    <div class="field">
+      <label>งบลงทุนรวมทั้งแผน (<span id="fbp-cur-lbl">$</span>)</label>
+      <input type="number" id="fbp-budget" placeholder="0.00" step="0.01" inputmode="decimal">
+    </div>
+
+    <div class="an-card" style="padding:12px 14px; margin:12px 0; background:var(--card2)">
+      <div style="font-size:12.5px; font-weight:700; color:var(--muted)">ไม้ 1 (อัตโนมัติ)</div>
+      <div id="fbp-leg1-preview" style="font-size:13px; margin-top:4px">กรอกไม้ 2/3 เพื่อดูสัดส่วนไม้ 1</div>
+    </div>
+
+    <div class="section-label">ไม้ 2</div>
+    <div class="field"><label>% ของงบ</label><input type="number" id="fbp-leg2-pct" placeholder="เช่น 30" step="1" inputmode="decimal" oninput="_fbpUpdateLeg1Preview()"></div>
+    <div class="field"><label>ราคาเป้าหมาย</label><input type="number" id="fbp-leg2-price" placeholder="0.00" step="0.01" inputmode="decimal" oninput="_fbpValidatePriceOrder()"></div>
+
+    <div class="section-label">ไม้ 3 (ไม่บังคับ)</div>
+    <div class="field"><label>% ของงบ</label><input type="number" id="fbp-leg3-pct" placeholder="เช่น 20" step="1" inputmode="decimal" oninput="_fbpUpdateLeg1Preview()"></div>
+    <div class="field"><label>ราคาเป้าหมาย</label><input type="number" id="fbp-leg3-price" placeholder="0.00" step="0.01" inputmode="decimal" oninput="_fbpValidatePriceOrder()"></div>
+
+    <div id="fbp-price-warning"></div>
+
+    <button class="submit-btn btn-us" style="margin-top:8px" onclick="submitFlexibleBuyPlan()">💾 บันทึกแผน</button>
+    <button class="wbtn ghost" style="width:100%; height:48px; margin-top:10px" onclick="closeFlexibleBuyPlanModal()">ปิด</button>
   </div>
 </div>
 
@@ -1437,7 +1535,12 @@
 
 <!-- ══ MORE BOTTOM SHEET ══ -->
 <div id="sheet-overlay" onclick="closeMoreSheet()"></div>
+
+
+
 <div id="more-sheet">
+    <button class="sheet-close-btn" onclick="closeMoreSheet()">✕</button>
+
   <div class="sheet-handle"></div>
   <div class="sheet-title">เมนูเพิ่มเติม</div>
 
@@ -1450,6 +1553,20 @@
     <span class="sheet-item-arrow">›</span>
   </button>
  
+<button class="sheet-item" onclick="openSheetPage('interest')">
+  <span class="sheet-item-icon">💡</span>
+  <div class="sheet-item-text">
+    <div class="sheet-item-name">หุ้นที่สนใจ</div>
+    <div class="sheet-item-desc">เก็บชื่อหุ้นไว้ก่อน ยังไม่วิเคราะห์ — กดดาวเมื่อพร้อมเข้า Watchlist</div>
+  </div>
+  <span class="sheet-item-arrow">›</span>
+</button>
+
+
+
+
+
+
  <button class="sheet-item" onclick="openSheetPage('screener')">
   <span class="sheet-item-icon">🔍</span>
   <div class="sheet-item-text">
@@ -1506,8 +1623,9 @@
 // เผื่อเพิ่มหน้าใหม่ในอนาคต: เพิ่ม entry ใน PAGE_LABELS + ปุ่มใน #bottom-nav
 // + <div class="page" id="page-XXX"> แล้วอัปเดต --nav-cols ใน :root
 // ══════════════════════════════
-const PAGE_LABELS = { summary:'Summary', holdings:'Holdings', analyze:'วิเคราะห์หุ้น', dividend:'ปันผลรายปี', entry:'บันทึก', watchlist:'Watchlist', settings:'ตั้งค่า', help:'Help', taxreport:'Tax Report', screener:'จัดอันดับหุ้น' };
-const SHEET_PAGES = ['dividend', 'watchlist', 'settings', 'help', 'taxreport', 'screener'];
+const PAGE_LABELS = { summary:'Summary', holdings:'Holdings', analyze:'วิเคราะห์หุ้น', dividend:'ปันผลรายปี', entry:'บันทึก', watchlist:'Watchlist', settings:'ตั้งค่า', help:'Help', taxreport:'Tax Report', interest:'หุ้นที่สนใจ' };
+const SHEET_PAGES = ['dividend', 'watchlist', 'settings', 'help', 'taxreport', 'interest'];
+
 
 let currentPage = 'summary';
 
@@ -1547,6 +1665,7 @@ function switchPage(page) {
   if (page === 'dividend' && !dividendLoaded) initDividendReport();
   if (page === 'settings' && !settingsPageLoaded) loadSettingsPage();
   if (page === 'watchlist' && !watchlistLoaded)   loadWatchlist();
+  if (page === 'interest' && !interestLoaded) loadInterestList();
   if (page === 'taxreport' && !taxReportLoaded) initTaxReportPage();
 
   document.getElementById('scroll-area').scrollTop = 0;
@@ -1798,6 +1917,36 @@ function runCleanupWeb() {
       showToast('❌ ' + e.message, 'err');
     })
     .runCleanup();
+}
+
+
+function runAddDividendYearsWeb() {
+  const btn = document.getElementById('divyears-btn');
+  const resultEl = document.getElementById('divyears-result');
+  btn.disabled = true;
+  btn.textContent = '⏳ กำลังเติมปี...';
+  resultEl.innerHTML = '';
+
+  google.script.run
+    .withSuccessHandler(r => {
+      btn.disabled = false;
+      btn.textContent = '📅 เติมปีที่ขาด';
+      if (r.success) {
+        resultEl.innerHTML = `<div class="update-result ok">✅ ${r.message}</div>`;
+        showToast(r.added > 0 ? '✅ เติมปีปันผลเรียบร้อย' : 'ℹ️ ไม่มีปีที่ต้องเติม', 'ok');
+        if (r.added > 0) { dividendLoaded = false; } // บังคับโหลดใหม่รอบหน้าที่เปิดหน้าปันผล
+      } else {
+        resultEl.innerHTML = `<div class="update-result err">❌ ${r.error}</div>`;
+        showToast('❌ ' + r.error, 'err');
+      }
+    })
+    .withFailureHandler(e => {
+      btn.disabled = false;
+      btn.textContent = '📅 เติมปีที่ขาด';
+      resultEl.innerHTML = `<div class="update-result err">❌ ${e.message}</div>`;
+      showToast('❌ ' + e.message, 'err');
+    })
+    .addMissingDividendSummaryYears();
 }
 
 
@@ -2114,6 +2263,12 @@ function loadSummary() {
     })
     .withFailureHandler(e=>{ goalEl.innerHTML = `<div class="empty-msg">❌ ${e.message}</div>`; })
     .getFinancialGoalData();
+ 
+
+   loadBuyPlanAlerts(); // ← เพิ่มบรรทัดนี้
+
+
+
 
   // เส้นแนวโน้มบน hero card — ต้องมีข้อมูล Holdings + Sparkline ก่อน
   // (ถ้ายังไม่เคยโหลด เช่น ผู้ใช้ยังไม่ได้เปิดหน้า Holdings เลย ให้โหลดเอง)
@@ -2138,6 +2293,34 @@ function loadSummary() {
   loadBenchmarkComparison();
 
 }
+
+function loadBuyPlanAlerts() {
+  google.script.run
+    .withSuccessHandler(d => {
+      const card = document.getElementById('buyplan-alert-card');
+      const el = document.getElementById('buyplan-alert-content');
+      if (!d || !d.success || !d.alerts.length) { card.style.display = 'none'; return; }
+
+      card.style.display = 'block';
+      el.innerHTML = d.alerts.map(a => {
+        const flag = a.market === 'TH' ? '🇹🇭' : '🇺🇸';
+        return `
+<div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid var(--line); cursor:pointer" onclick="goToStockDetail('${a.ticker}','${a.market}')">
+  <div>
+    <span style="font-weight:800">${flag} ${a.ticker}</span>
+    <div style="font-size:11.5px; color:var(--muted); margin-top:2px">ไม้ ${a.legNumber} (${a.pct}%) เป้าหมาย ${fmtNum(a.targetPrice, a.cur, '', 2)}</div>
+  </div>
+  <span class="badge safe">✅ ซื้อได้</span>
+</div>`;
+      }).join('');
+    })
+    .withFailureHandler(() => {
+      document.getElementById('buyplan-alert-card').style.display = 'none';
+    })
+    .getBuyPlanAlertsSummary();
+}
+
+
 
 function switchSummarySub(tab) {
   summaryState.sub = tab;
@@ -4114,6 +4297,7 @@ function renderStockDetail(d) {
   
   if (d.lane === 'portfolio') _loadStockDetailTrailLock(d.ticker, d.market, d.cur); // ← เพิ่มบรรทัดนี้ (เฉพาะสาย Portfolio)
 
+  renderBuyPlanWidget('sd-buyplan-widget', d.ticker, d.market);
 
 }
 
@@ -4384,6 +4568,7 @@ ${_buildPositionSummaryHTML(d.ticker, d.market, cur)}
  
 ${_renderFeeCard(d.feeCard, cur, d.hero.price)}
 
+<div id="sd-buyplan-widget"></div>
 
 
 
@@ -4582,6 +4767,8 @@ function _renderPortfolioDetail(d) {
 
 
 ${_renderFeeCard(d.feeCard, cur, d.positionSummary.currentPrice)}
+
+<div id="sd-buyplan-widget"></div>
 
 ${allocBar}
 
@@ -5514,6 +5701,280 @@ ${conversionNote}
 }
 
 
+// ══════════════════════════════════════════════════════════
+// FLEXIBLE BUY PLAN — modal สร้าง/แก้แผน + widget แสดงสถานะ
+// ══════════════════════════════════════════════════════════
+let fbpCtx = null; // { ticker, market, cur }
+
+function openFlexibleBuyPlanModal(ticker, market, cur) {
+  fbpCtx = { ticker, market, cur: cur || (market === 'TH' ? '฿' : '$'), referencePrice: null };
+  document.getElementById('fbp-ticker-lbl').textContent = ticker;
+  document.getElementById('fbp-cur-lbl').textContent = fbpCtx.cur;
+  ['fbp-budget','fbp-leg2-pct','fbp-leg2-price','fbp-leg3-pct','fbp-leg3-price'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('fbp-price-warning').innerHTML = '';
+  document.getElementById('fbp-leg1-preview').textContent = 'กำลังดึงราคาอ้างอิง...';
+  document.getElementById('fbp-overlay').style.display = 'flex';
+
+  google.script.run
+    .withSuccessHandler(r => {
+      if (r.success) {
+        fbpCtx.referencePrice = r.referencePrice;
+        const sourceNote = r.source === 'first_buy' ? '(ราคาที่ซื้อจริงครั้งแรก)' : '(ราคาปัจจุบัน — ยังไม่เคยถือ)';
+        document.getElementById('fbp-ref-price-note').textContent = `ราคาอ้างอิงไม้ 1: ${fmtNum(r.referencePrice, fbpCtx.cur, '', 2)} ${sourceNote}`;
+      } else {
+        document.getElementById('fbp-ref-price-note').textContent = '⚠️ ดึงราคาอ้างอิงไม่สำเร็จ: ' + r.error;
+      }
+      _fbpUpdateLeg1Preview();
+    })
+    .withFailureHandler(() => {
+      document.getElementById('fbp-ref-price-note').textContent = '⚠️ ดึงราคาอ้างอิงไม่สำเร็จ';
+    })
+    .getBuyPlanReferencePriceHint(ticker, market);
+}
+
+function closeFlexibleBuyPlanModal() { document.getElementById('fbp-overlay').style.display = 'none'; fbpCtx = null; }
+
+function _fbpUpdateLeg1Preview() {
+  const p2pct = parseFloat(document.getElementById('fbp-leg2-pct').value) || 0;
+  const p3pct = parseFloat(document.getElementById('fbp-leg3-pct').value) || 0;
+  const leg1 = 100 - p2pct - p3pct;
+  const el = document.getElementById('fbp-leg1-preview');
+  if (leg1 <= 0) {
+    el.innerHTML = `<span style="color:var(--stop)">⚠️ % ไม้ 2+3 รวมกันต้องน้อยกว่า 100%</span>`;
+  } else {
+    el.innerHTML = `ไม้ 1 จะได้ <b style="color:var(--text)">${leg1}%</b> ของงบ (คำนวณอัตโนมัติจากส่วนที่เหลือ)`;
+  }
+  _fbpValidatePriceOrder();
+}
+
+// ── เช็คลำดับราคาแบบสด ทุกครั้งที่พิมพ์ — เตือนก่อนกดบันทึกจริง กันเสียเวลากรอกครบแล้วโดนเด้ง error ──
+function _fbpValidatePriceOrder() {
+  const warnEl = document.getElementById('fbp-price-warning');
+  if (!fbpCtx || !fbpCtx.referencePrice) { warnEl.innerHTML = ''; return; }
+
+  const p2 = parseFloat(document.getElementById('fbp-leg2-price').value);
+  const p3 = parseFloat(document.getElementById('fbp-leg3-price').value);
+
+  const problems = [];
+  if (p2 && p2 >= fbpCtx.referencePrice) {
+    problems.push(`ราคาไม้ 2 (${fmtNum(p2, fbpCtx.cur, '', 2)}) ต้องต่ำกว่าไม้ 1 (${fmtNum(fbpCtx.referencePrice, fbpCtx.cur, '', 2)})`);
+  }
+  if (p3 && p2 && p3 >= p2) {
+    problems.push(`ราคาไม้ 3 (${fmtNum(p3, fbpCtx.cur, '', 2)}) ต้องต่ำกว่าไม้ 2 (${fmtNum(p2, fbpCtx.cur, '', 2)})`);
+  } else if (p3 && !p2 && p3 >= fbpCtx.referencePrice) {
+    problems.push(`ราคาไม้ 3 (${fmtNum(p3, fbpCtx.cur, '', 2)}) ต้องต่ำกว่าไม้ 1 (${fmtNum(fbpCtx.referencePrice, fbpCtx.cur, '', 2)})`);
+  }
+
+  warnEl.innerHTML = problems.length
+    ? `<div class="empty-msg" style="text-align:left;padding:8px 0 0;font-size:12px;color:var(--stop)">⚠️ ${problems.join('<br>⚠️ ')}</div>`
+    : '';
+}
+
+
+
+
+
+function submitFlexibleBuyPlan() {
+  if (!fbpCtx) return;
+  const budget = document.getElementById('fbp-budget').value;
+  if (!budget || parseFloat(budget) <= 0) { showToast('⚠️ กรุณาระบุงบลงทุนรวม', 'err'); return; }
+
+  const legs = [];
+  const p2 = document.getElementById('fbp-leg2-pct').value, pr2 = document.getElementById('fbp-leg2-price').value;
+  const p3 = document.getElementById('fbp-leg3-pct').value, pr3 = document.getElementById('fbp-leg3-price').value;
+  if (p2 && pr2) legs.push({ pct: p2, price: pr2 });
+  if (p3 && pr3) legs.push({ pct: p3, price: pr3 });
+  if (!legs.length) { showToast('⚠️ กรุณากำหนดไม้ 2 อย่างน้อย 1 ไม้ (ทั้ง % และราคา)', 'err'); return; }
+
+  // ── กันพลาดครั้งสุดท้ายก่อนยิง — ถ้ามี warning ค้างอยู่ในจอไม่ให้ส่ง ──
+  const warnEl = document.getElementById('fbp-price-warning');
+  if (warnEl.innerHTML.trim()) { showToast('⚠️ กรุณาแก้ราคาให้เรียงจากมากไปน้อยตามที่แจ้งเตือนก่อน', 'err'); return; }
+
+  setLoading(true);
+  google.script.run
+    .withSuccessHandler(r => {
+      setLoading(false);
+      if (r.success) {
+        showToast('✅ บันทึกแผนแล้ว', 'ok');
+        const savedTicker = fbpCtx.ticker;
+        closeFlexibleBuyPlanModal();
+        _refreshBuyPlanWidgetsFor(savedTicker);
+      } else showToast('❌ ' + r.error, 'err');
+    })
+    .withFailureHandler(e => { setLoading(false); showToast('❌ ' + e.message, 'err'); })
+    .saveFlexibleBuyPlan(fbpCtx.ticker, fbpCtx.market, budget, legs, '');
+}
+
+// ── แก้ไขเป้า (งบรวม) แบบ inline prompt สั้นๆ ──
+function editBuyPlanTarget(ticker, market, currentBudget, widgetElId) {
+  const val = prompt('แก้ไขงบลงทุนรวมของแผน (ตัวเลขเท่านั้น):', currentBudget || '');
+  if (val === null) return;
+  const newBudget = parseFloat(val);
+  if (!newBudget || newBudget <= 0) { showToast('⚠️ จำนวนเงินไม่ถูกต้อง', 'err'); return; }
+
+  setLoading(true);
+  google.script.run
+    .withSuccessHandler(r => {
+      setLoading(false);
+      if (r.success) { showToast('✅ แก้ไขเป้าหมายแล้ว', 'ok'); renderBuyPlanWidget(widgetElId, ticker, market); }
+      else showToast('❌ ' + r.error, 'err');
+    })
+    .withFailureHandler(e => { setLoading(false); showToast('❌ ' + e.message, 'err'); })
+    .updateBuyPlanTarget(ticker, market, newBudget);
+}
+
+// ── Widget สถานะแผน — ใช้ id container ต่างกันได้ (sd-buyplan-widget / wl-buyplan-widget) ──
+function renderBuyPlanWidget(containerId, ticker, market) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  el.innerHTML = '<div class="spin-wrap"><div class="spinner"></div></div>';
+
+  google.script.run
+    .withSuccessHandler(d => {
+      if (!d || !d.success) {
+        el.innerHTML = `
+<div class="an-card">
+  <div class="an-section-lbl">🧨 แผนแบ่งไม้</div>
+  <div class="empty-msg" style="padding:12px 0;font-size:13px">ยังไม่มีแผนของหุ้นนี้</div>
+  <button class="submit-btn btn-us" style="margin-top:8px" onclick="openFlexibleBuyPlanModal('${ticker}','${market}')">➕ ตั้งแผนแบ่งไม้</button>
+</div>`;
+        return;
+      }
+
+      const cur = market === 'TH' ? '฿' : '$';
+      const stepsHtml = d.steps.map(s => {
+        const statusIcon = { done: '🟢', next: '🎯', pending: '⚪' };
+        const statusText = { done: 'ซื้อแล้ว', next: 'รอซื้อ', pending: 'รอคิว' };
+        const priceLabel = s.status === 'done' ? fmtNum(s.executedPrice, cur, '', 2) : (s.targetPrice ? fmtNum(s.targetPrice, cur, '', 2) : '—');
+
+        let signalHtml = '';
+        if (s.status !== 'done') {
+          signalHtml = s.canBuyNow
+            ? `<div class="leg-distance leg-distance-ready">✅ ควรซื้อตอนนี้ได้แล้ว (ราคาถึงเป้าหมายแล้ว)</div>`
+            : `<div class="leg-distance">⏳ ยังไม่ควรซื้อ — อีก ${fmtNum(Math.abs(s.distanceAmount||0), cur, '', 2)} (${(s.distancePct||0).toFixed(2)}%) ถึงจุดซื้อ</div>`;
+        }
+
+        let avgCostHtml = '';
+        if (s.status !== 'done' && s.newAvgCost !== undefined) {
+          avgCostHtml = s.curAvgCost === null
+            ? `<div class="leg-avgcost">🆕 ต้นทุนเฉลี่ยเริ่มต้นจะเป็น <b>${fmtNum(s.newAvgCost, cur, '', 2)}</b></div>`
+            : `<div class="leg-avgcost">ต้นทุนเฉลี่ยใหม่: <b>${fmtNum(s.newAvgCost, cur, '', 2)}</b> (เดิม ${fmtNum(s.curAvgCost, cur, '', 2)})</div>`;
+        }
+
+        // ── ปุ่มยกเลิก — เฉพาะไม้ 2,3 ที่ยังไม่ done เท่านั้น (ไม้ 1 ห้ามยกเลิก) ──
+        const cancelBtn = (s.status !== 'done' && s.legNumber > 1)
+          ? `<button class="wbtn ghost" style="width:100%; height:36px; margin-top:8px; font-size:12px" onclick="cancelBuyPlanLegConfirm('${ticker}','${market}',${s.legNumber},'${containerId}')">✕ ยกเลิกไม้นี้</button>`
+          : '';
+
+        return `
+<div class="leg-card leg-card-${s.status}">
+  <div class="leg-top">
+    <span class="leg-title">${statusIcon[s.status]} ไม้ ${s.legNumber}</span>
+    <span class="leg-status-tag leg-status-${s.status}">${statusText[s.status]}</span>
+  </div>
+  <div class="leg-mid"><span class="leg-price">${priceLabel}</span><span class="leg-sep">•</span><span class="leg-pct">${s.pct}% ของงบ</span></div>
+  ${signalHtml}
+  ${avgCostHtml}
+  ${cancelBtn}
+</div>`;
+      }).join('');
+
+      el.innerHTML = `
+<div class="an-card">
+  <div class="an-section-lbl">🧨 แผนแบ่งไม้</div>
+  ${d.usingReferencePrice ? '<div class="empty-msg" style="text-align:left;padding:0 0 8px;font-size:11.5px">📌 อ้างอิงราคา ณ ตอนสร้างแผน (ยังไม่เคยถือ)</div>' : ''}
+  ${stepsHtml}
+  <div id="fbp-cash-status-${containerId}" style="margin-top:10px"></div>
+  <div id="fbp-concentration-${containerId}" style="margin-top:10px"></div>
+  <div style="display:flex; gap:8px; margin-top:10px">
+    <button class="wbtn ghost" style="flex:1" onclick="editBuyPlanTarget('${ticker}','${market}',${d.budget},'${containerId}')">✏️ แก้เป้า</button>
+    <button class="wbtn ghost" style="flex:1" onclick="openFlexibleBuyPlanModal('${ticker}','${market}')">🔁 ตั้งแผนใหม่</button>
+  </div>
+</div>`;
+
+      _loadBuyPlanCashStatus(containerId, ticker, market);
+      _loadBuyPlanConcentrationCheck(containerId, ticker, market); // ← ใหม่
+    })
+    .withFailureHandler(e => {
+      el.innerHTML = `<div class="an-card"><div class="an-section-lbl">🧨 แผนแบ่งไม้</div><div class="empty-msg" style="padding:12px 0;font-size:13px">❌ ${e.message}</div></div>`;
+    })
+    .getBuyPlanForTicker(ticker, market);
+}
+
+// ── ข้อ 3: แสดงผลเช็ค concentration ──
+function _loadBuyPlanConcentrationCheck(containerId, ticker, market) {
+  const el = document.getElementById('fbp-concentration-' + containerId);
+  if (!el) return;
+  google.script.run
+    .withSuccessHandler(c => {
+      if (!c || !c.success) { el.innerHTML = ''; return; }
+      const cls = c.overLimit ? 'stop' : 'safe';
+      el.innerHTML = `
+<div class="empty-msg" style="text-align:left;padding:8px 0 0;font-size:12px;border-top:1px solid var(--line)">
+  📊 ถือตอนนี้ <b style="color:var(--text)">${c.currentPct}%</b> ของพอร์ต → ถ้าซื้อครบแผนจะเป็น <b style="color:var(--text)">${c.projectedPct}%</b> (จำกัดไว้ที่ ${c.limitPct}%)
+</div>
+<span class="badge ${cls} badge-block" style="margin-top:6px">${c.overLimit ? '⚠️ ถ้าซื้อครบทุกไม้จะเกิน Concentration Limit — พิจารณาลดขนาดไม้ลง' : '✅ ยังอยู่ในขอบเขต Concentration Limit'}</span>`;
+    })
+    .withFailureHandler(() => { el.innerHTML = ''; })
+    .getBuyPlanConcentrationCheck(ticker, market);
+}
+
+// ── ข้อ 4: ยกเลิกไม้ พร้อม confirm ก่อนลบจริง ──
+function cancelBuyPlanLegConfirm(ticker, market, legNumber, containerId) {
+  if (!confirm(`ยืนยันยกเลิกไม้ ${legNumber} ของแผน ${ticker}?\nไม้ที่เหลือจะเลื่อนลำดับขึ้นมาแทนที่ (แก้ไขไม่ได้ย้อนหลัง)`)) return;
+
+  setLoading(true);
+  google.script.run
+    .withSuccessHandler(r => {
+      setLoading(false);
+      if (r.success) {
+        showToast('✅ ยกเลิกไม้แล้ว เหลือ ' + r.remainingLegsCount + ' ไม้', 'ok');
+        renderBuyPlanWidget(containerId, ticker, market);
+      } else {
+        showToast('❌ ' + r.error, 'err');
+      }
+    })
+    .withFailureHandler(e => { setLoading(false); showToast('❌ ' + e.message, 'err'); })
+    .cancelBuyPlanLeg(ticker, market, legNumber);
+}
+
+
+function _loadBuyPlanCashStatus(containerId, ticker, market) {
+  const el = document.getElementById('fbp-cash-status-' + containerId);
+  if (!el) return;
+  google.script.run
+    .withSuccessHandler(c => {
+      if (!c || !c.success) { el.innerHTML = ''; return; }
+      const cls = c.cashSufficient ? 'safe' : 'stop';
+      el.innerHTML = `
+<div class="empty-msg" style="text-align:left;padding:8px 0 0;font-size:12px;border-top:1px solid var(--line)">
+  💰 เหลือต้องลงทุนอีก <b style="color:var(--text)">${fmtNum(c.remainingBudget, c.currency==='THB'?'฿':'$', '', 2)}</b>
+  · เงินสด${c.currency}ที่มี: <b style="color:var(--text)">${fmtNum(c.cashAvailable, c.currency==='THB'?'฿':'$', '', 2)}</b>
+</div>
+<span class="badge ${cls} badge-block" style="margin-top:6px">${c.cashSufficient ? '✅ เงินสดพอสำหรับแผนที่เหลือ' : '⚠️ เงินสดไม่พอ ขาดอีก ' + fmtNum(c.shortfall, c.currency==='THB'?'฿':'$', '', 2)}</span>`;
+    })
+    .withFailureHandler(() => { el.innerHTML = ''; })
+    .getBuyPlanCashStatus(ticker, market);
+}
+
+function _refreshBuyPlanWidgetsFor(ticker) {
+  if (document.getElementById('sd-buyplan-widget')) renderBuyPlanWidget('sd-buyplan-widget', ticker, sdAnalyzeCtx ? sdAnalyzeCtx.market : null);
+  if (document.getElementById('wl-buyplan-widget')) renderBuyPlanWidget('wl-buyplan-widget', ticker, wlAnalyzeCtx ? wlAnalyzeCtx.market : null);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 function _updateMosSummaryLine() {
   const el = document.getElementById('wl-mos-summary-line');
   if (!el || !wlAnalyzeCtx) return;
@@ -5783,6 +6244,8 @@ let dividendLoaded = false;
 function initDividendReport() {
   dividendLoaded = true;
   document.getElementById('div-content').innerHTML = '<div class="spin-wrap"><div class="spinner"></div></div>';
+  loadDividendPlanning(); // ← เพิ่มบรรทัดนี้ (โหลดคู่ขนานกับรายงานเดิม)
+
   google.script.run
     .withSuccessHandler(years=>{
       dividendState.years = (years && years.length) ? years : [new Date().getFullYear()];
@@ -5795,6 +6258,132 @@ function initDividendReport() {
     })
     .getDividendYears();
 }
+
+
+// ══════════════════════════════
+// แผนเงินปันผลทั้งปี — โหลดแยกจากรายงานปันผลรายปี (คนละ backend)
+// ══════════════════════════════
+let divPlanData = null;
+
+function loadDividendPlanning() {
+  document.getElementById('divplan-content').innerHTML = '<div class="spin-wrap"><div class="spinner"></div></div>';
+  google.script.run
+    .withSuccessHandler(d => { divPlanData = d; renderDividendPlanning(); })
+    .withFailureHandler(e => {
+      document.getElementById('divplan-content').innerHTML = `<div class="empty-msg">❌ ${e.message}</div>`;
+    })
+    .getDividendPlanningData();
+}
+
+function renderDividendPlanning() {
+  const el = document.getElementById('divplan-content');
+  const d = divPlanData;
+  if (!d || !d.success) {
+    el.innerHTML = `<div class="empty-msg">❌ ${(d && d.error) || 'โหลดไม่สำเร็จ'}</div>`;
+    return;
+  }
+
+  const hasTarget = d.annualTarget > 0;
+  const progressClamped = hasTarget ? Math.min(100, Math.max(0, d.progressPct)) : 0;
+  const onTrack = hasTarget ? d.projectedYearEndTHB >= d.annualTarget : null;
+
+  el.innerHTML = `
+${hasTarget ? `
+<div class="goal-row"><span class="goal-lbl">เป้าหมายปันผลปีนี้</span><span class="goal-val">${fmtNum(d.annualTarget,'฿','',2)}</span></div>
+<div class="goal-row"><span class="goal-lbl">ได้รับแล้ว (YTD)</span><span class="goal-val">${fmtNum(d.ytdDividendTHB,'฿','',2)}</span></div>
+<div class="progress-wrap">
+  <div class="progress-track"><div class="progress-fill" style="width:${progressClamped.toFixed(1)}%"></div></div>
+  <div class="progress-pct">Progress ${d.progressPct.toFixed(1)}%</div>
+</div>
+<div class="empty-msg" style="text-align:left;padding:8px 0 0;font-size:12.5px">
+  ${onTrack ? '🟢' : '🟡'} ถ้าอัตรารับปันผลเฉลี่ยเดือนนี้คงที่ตลอดปี คาดว่าจะได้ราว <b style="color:var(--text)">${fmtNum(d.projectedYearEndTHB,'฿','',2)}</b>
+  ${onTrack ? ' — น่าจะถึงเป้าหมาย' : ' — อาจไม่ถึงเป้าหมาย ขาดอีก ' + fmtNum(d.remainingToTarget,'฿','',2)}
+</div>` : `
+<div class="empty-msg" style="padding:8px 0">ยังไม่ได้ตั้งเป้าหมายปันผลทั้งปี</div>`}
+
+<div class="field" style="margin-top:${hasTarget?'16':'8'}px">
+  <label>${hasTarget ? 'แก้ไข' : 'ตั้ง'}เป้าหมายปันผลทั้งปี (บาท)</label>
+  <input type="number" id="divplan-target-input" placeholder="เช่น 50000" step="100" inputmode="decimal" value="${hasTarget ? d.annualTarget : ''}">
+</div>
+<button class="submit-btn btn-div" onclick="saveDividendTarget()">✅ บันทึกเป้าหมาย</button>
+
+<div class="cagr-box" style="margin-top:16px">
+  <div class="cagr-item">
+    <div class="cagr-lbl">🌱 Yield ปัจจุบัน (12 เดือนล่าสุด)</div>
+    <div class="cagr-val" style="color:var(--safe)">${d.currentYieldPct.toFixed(2)}%</div>
+  </div>
+  <div class="cagr-item">
+    <div class="cagr-lbl">ปันผล 12 เดือนล่าสุด</div>
+    <div class="cagr-val" style="color:var(--text)">${fmtNum(d.trailing12moTHB,'฿','',0)}</div>
+  </div>
+</div>
+<div class="empty-msg" style="text-align:left;padding:8px 0 0;font-size:11.5px">🇹🇭 ${fmtNum(d.trailing12moByMarket.th,'฿','',0)} · 🇺🇸 ${fmtNum(d.trailing12moByMarket.us,'฿','',0)} (12 เดือนล่าสุด ไม่ใช่ปีปฏิทิน)</div>
+
+<div class="section-label" style="margin-top:18px">💡 ถ้าเติมเงินลงทุนเพิ่ม จะได้ปันผลเพิ่มประมาณ</div>
+<div class="an-card" style="padding:14px 16px; margin-top:6px; background:var(--card2)">
+  <div class="field" style="margin-bottom:10px">
+    <label>เงินลงทุนเพิ่ม (บาท)</label>
+    <input type="number" id="divplan-addamount" placeholder="เช่น 100000" step="1000" inputmode="decimal" oninput="renderDividendProjection()">
+  </div>
+  <div class="field" style="margin-bottom:10px">
+    <label>อัตราปันผลที่คาดหวัง (%) — ค่าเริ่มต้นคือ Yield ปัจจุบัน แก้ไขได้</label>
+    <input type="number" id="divplan-yield-assume" step="0.01" inputmode="decimal" value="${d.currentYieldPct.toFixed(2)}" oninput="renderDividendProjection()">
+  </div>
+  <div id="divplan-projection-result"></div>
+</div>
+<div class="empty-msg" style="text-align:left;padding:10px 0 0;font-size:11px;line-height:1.6">
+⚠️ เป็นการประมาณการเชิงเส้นจาก Yield ปัจจุบัน สมมติว่าเงินใหม่ลงทุนในพอร์ตที่มีสัดส่วนหุ้นปันผลใกล้เคียงเดิม — Yield จริงในอนาคตอาจเปลี่ยนตามการปรับพอร์ตหรือบริษัทลดปันผล
+</div>`;
+
+  renderDividendProjection();
+}
+
+function renderDividendProjection() {
+  const resultEl = document.getElementById('divplan-projection-result');
+  if (!resultEl || !divPlanData) return;
+
+  const amount = parseFloat(document.getElementById('divplan-addamount').value);
+  const yieldPct = parseFloat(document.getElementById('divplan-yield-assume').value);
+
+  if (!amount || amount <= 0 || !yieldPct || yieldPct <= 0) {
+    resultEl.innerHTML = '';
+    return;
+  }
+
+  const additionalAnnualDiv = amount * (yieldPct / 100);
+  const newTotalAsset = divPlanData.totalAssetTHB + amount;
+  const newTotalAnnualDiv = divPlanData.trailing12moTHB + additionalAnnualDiv;
+
+  resultEl.innerHTML = `
+<div style="background:var(--tint2); border:1px solid rgba(99,102,241,.28); border-radius:14px; padding:14px; text-align:center">
+  <div style="font-size:12px; color:var(--muted); font-weight:700; margin-bottom:4px">ปันผลที่คาดว่าจะเพิ่มขึ้นต่อปี</div>
+  <div style="font-size:24px; font-weight:800; color:var(--safe)">+${fmtNum(additionalAnnualDiv,'฿','',2)}</div>
+  <div style="font-size:12px; color:var(--muted); margin-top:4px">≈ ${fmtNum(additionalAnnualDiv/12,'฿','',0)}/เดือน</div>
+</div>
+<div class="an-stat-grid" style="margin-top:10px">
+  <div class="an-stat"><span class="an-stat-lbl">มูลค่าพอร์ตใหม่ (ประมาณ)</span><span class="an-stat-val">${fmtNum(newTotalAsset,'฿','',0)}</span></div>
+  <div class="an-stat"><span class="an-stat-lbl">ปันผลรวมต่อปี (ประมาณ)</span><span class="an-stat-val">${fmtNum(newTotalAnnualDiv,'฿','',0)}</span></div>
+</div>`;
+}
+
+function saveDividendTarget() {
+  const val = document.getElementById('divplan-target-input').value;
+  if (!val || parseFloat(val) < 0) { showToast('⚠️ กรุณาระบุจำนวนเงินที่ถูกต้อง', 'err'); return; }
+
+  setLoading(true);
+  google.script.run
+    .withSuccessHandler(r => {
+      setLoading(false);
+      if (r.success) { showToast('✅ บันทึกเป้าหมายปันผลแล้ว', 'ok'); loadDividendPlanning(); }
+      else showToast('❌ ' + r.error, 'err');
+    })
+    .withFailureHandler(e => { setLoading(false); showToast('❌ ' + e.message, 'err'); })
+    .setDividendAnnualTarget(val);
+}
+
+
+
+
 
 function shiftDividendYear(delta) {
   const idx = dividendState.years.indexOf(dividendState.year);
@@ -6652,6 +7241,8 @@ function renderWatchlistAnalysis(d, ticker, market) {
   <div class="empty-msg" style="text-align:left; padding:10px 0 0; font-size:12px" id="wl-mos-summary-line">MOS: ⏳ กำลังคำนวณ...</div>
 </div>
 
+<div id="wl-buyplan-widget"></div>
+
 <button class="wbtn ghost" style="width:100%; height:44px; margin-bottom:14px" onclick="openDailyCloseModal('${d.ticker}','${cur}')">📅 ดูราคาปิดรายวัน (30 วัน)</button>
 
 <!-- ══ Support / Resistance ══ -->
@@ -6754,9 +7345,120 @@ function renderWatchlistAnalysis(d, ticker, market) {
   _loadWatchlistRS(ticker, market);
   _loadWatchlistComposite(ticker, market);      // ← ใหม่
   _loadWatchlistBollinger(ticker, market, cur); // ← ใหม่
+  renderBuyPlanWidget('wl-buyplan-widget', d.ticker, d.market);
+
 
 }
 
+// ══════════════════════════════
+// เมนู หุ้นที่สนใจ (Interest List) — เก็บไอเดียไว้ก่อน ไม่วิเคราะห์
+// ══════════════════════════════
+const interestState = { market: 'US', items: { us: [], th: [] } };
+let interestLoaded = false;
+
+function loadInterestList() {
+  interestLoaded = true;
+  document.getElementById('int-cards').innerHTML = '<div class="spin-wrap"><div class="spinner"></div></div>';
+  google.script.run
+    .withSuccessHandler(data => {
+      interestState.items.us = (data && data.us) || [];
+      interestState.items.th = (data && data.th) || [];
+      renderInterestList();
+    })
+    .withFailureHandler(e => {
+      document.getElementById('int-cards').innerHTML = `<div class="empty-msg">❌ ${e.message}</div>`;
+    })
+    .getInterestListData();
+}
+
+function switchInterestMarket(market) {
+  interestState.market = market;
+  document.getElementById('int-mkt-us').classList.toggle('active', market === 'US');
+  document.getElementById('int-mkt-th').classList.toggle('active', market === 'TH');
+  renderInterestList();
+}
+
+function renderInterestList() {
+  const list = interestState.market === 'TH' ? interestState.items.th : interestState.items.us;
+  const el = document.getElementById('int-cards');
+  if (!list.length) { el.innerHTML = '<div class="empty-msg">ยังไม่มีหุ้นที่เก็บไว้ในกลุ่มนี้</div>'; return; }
+
+  const flag = interestState.market === 'TH' ? '🇹🇭' : '🇺🇸';
+  el.innerHTML = list.map(item => `
+<div class="int-card">
+  <div class="int-card-left">
+    <div class="int-card-ticker">${flag} ${item.ticker}</div>
+    <div class="int-card-company">${item.companyName || '—'}</div>
+    ${item.note ? `<div class="int-card-note">💭 ${item.note}</div>` : ''}
+    <div class="int-card-date">เพิ่มเมื่อ ${item.dateAdded}</div>
+  </div>
+  <div class="int-card-actions">
+    <button class="int-star-btn" onclick="moveInterestToWatchlist('${item.ticker}','${item.market}')" title="เข้า Watchlist">⭐</button>
+    <button class="int-del-btn" onclick="openIntConfirm('${item.ticker}','${item.market}')" title="ลบ">🗑️</button>
+  </div>
+</div>`).join('');
+}
+
+function submitInterestAdd() {
+  const ticker = document.getElementById('int-add-ticker').value.trim();
+  const note = document.getElementById('int-add-note').value.trim();
+  if (!ticker) { showToast('⚠️ กรุณากรอกชื่อหุ้น', 'err'); return; }
+
+  setLoading(true);
+  google.script.run
+    .withSuccessHandler(r => {
+      setLoading(false);
+      if (r.success) {
+        showToast(`✅ เพิ่ม ${ticker.toUpperCase()} (${r.companyName}) แล้ว`, 'ok');
+        document.getElementById('int-add-ticker').value = '';
+        document.getElementById('int-add-note').value = '';
+        loadInterestList();
+      } else {
+        showToast('❌ ' + r.error, 'err');
+      }
+    })
+    .withFailureHandler(e => { setLoading(false); showToast('❌ ' + e.message, 'err'); })
+    .addInterestListItem(ticker, interestState.market, note);
+}
+
+// ── กดดาว ⭐ — พาเข้า flow "เพิ่มหุ้นเข้า Watchlist" แบบพิมพ์เอง พร้อม prefill ticker/market ──
+function moveInterestToWatchlist(ticker, market) {
+  switchPage('watchlist');
+  openWatchlistAdd();
+  switchWatchlistAddMode('manual');
+  document.getElementById('wl-manual-market').value = market;
+  document.getElementById('wl-manual-ticker').value = ticker;
+  onManualTickerInput(); // ยิง lookup ราคาทันที (มี debounce ในตัวอยู่แล้ว)
+  showToast('⭐ กรอกราคาเป้าหมายแล้วกด "เพิ่มเข้า Watchlist" ได้เลย', 'ok');
+}
+
+// ── Confirm ลบ ──
+let pendingIntRemove = null;
+function openIntConfirm(ticker, market) {
+  pendingIntRemove = { ticker, market };
+  document.getElementById('int-confirm-ticker').textContent = ticker;
+  document.getElementById('int-confirm-overlay').style.display = 'flex';
+}
+function closeIntConfirm() {
+  pendingIntRemove = null;
+  document.getElementById('int-confirm-overlay').style.display = 'none';
+}
+function confirmIntRemove() {
+  if (!pendingIntRemove) return;
+  const { ticker, market } = pendingIntRemove;
+  closeIntConfirm();
+  setLoading(true);
+  google.script.run
+    .withSuccessHandler(r => {
+      setLoading(false);
+      if (r.success) {
+        showToast('🗑️ ลบ ' + ticker + ' ออกจากลิสต์แล้ว', 'ok');
+        loadInterestList();
+      } else showToast('❌ ' + r.error, 'err');
+    })
+    .withFailureHandler(e => { setLoading(false); showToast('❌ ' + e.message, 'err'); })
+    .removeInterestListItem(ticker, market);
+}
 
 //ฟังก์ชันสแกน+แสดงผล จัดลำดับหุ้น : **
 function runScreener() {
@@ -8858,6 +9560,264 @@ function clearAlertLog() {
 
 
 
+
+
+
+## alert_triggers.gs
+// ============================================================
+// alert_triggers.gs — แจ้งเตือนอัตโนมัติผ่าน Telegram
+// 1) Watchlist เข้า Buy Zone
+// 2) หุ้นที่ถืออยู่ (Fast mode) หลุด Hard Stop
+// ไม่อิงฟังก์ชัน Telegram เดิม — เขียนส่งข้อความเองใหม่ทั้งหมด
+// ⚠️ ต้องรัน setupProperties() (ของเดิมที่มี BOT_TOKEN/CHAT_ID) ไว้แล้ว
+// ============================================================
+
+const ALERT_DEDUPE_SHEET_NAME = 'Alert_Dedupe_Log'; // สร้างอัตโนมัติถ้ายังไม่มี
+
+// ══════════════════════════════════════════════════════════
+// ส่งข้อความ Telegram — ฟังก์ชันใหม่ ไม่อิงของเดิม
+// ══════════════════════════════════════════════════════════
+function _sendAlertTelegramMessage(text) {
+  try {
+    const props = PropertiesService.getScriptProperties();
+    const token = props.getProperty('BOT_TOKEN');
+    const chatId = props.getProperty('CHAT_ID');
+    if (!token || !chatId) {
+      logError('_sendAlertTelegramMessage', new Error('ไม่พบ BOT_TOKEN หรือ CHAT_ID ใน Script Properties — รัน setupProperties() ก่อน'));
+      return false;
+    }
+
+    const url = 'https://api.telegram.org/bot' + token + '/sendMessage';
+    const payload = {
+      chat_id: chatId,
+      text: text,
+      parse_mode: 'HTML'
+    };
+    const resp = UrlFetchApp.fetch(url, {
+      method: 'post',
+      contentType: 'application/json',
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true
+    });
+    const code = resp.getResponseCode();
+    if (code !== 200) {
+      logError('_sendAlertTelegramMessage', new Error('HTTP ' + code + ': ' + resp.getContentText()));
+      return false;
+    }
+    return true;
+  } catch (e) {
+    logError('_sendAlertTelegramMessage', e);
+    return false;
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// กันเตือนซ้ำ — เตือนได้แค่ 1 ครั้ง/วัน/เงื่อนไข (key = ticker+market+type+date)
+// จนกว่าจะออกจากเงื่อนไขนั้นแล้วกลับเข้ามาใหม่ในวันถัดไปถึงจะเตือนอีกได้
+// ══════════════════════════════════════════════════════════
+function _ensureAlertDedupeSheet() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName(ALERT_DEDUPE_SHEET_NAME);
+  if (!sheet) {
+    sheet = ss.insertSheet(ALERT_DEDUPE_SHEET_NAME);
+    sheet.getRange(1, 1, 1, 4).setValues([['Key', 'Ticker', 'Type', 'DateSent']]);
+  }
+  return sheet;
+}
+
+// หมายเหตุ: ห้ามเทียบ r[3] === today ตรงๆ เพราะ Google Sheets จะ auto-convert
+// สตริงรูปแบบวันที่ (เช่น "2026-07-25") ที่เขียนด้วย appendRow ให้กลายเป็น
+// Date object โดยอัตโนมัติ ทำให้เทียบกับ string ไม่ตรงกันเสมอ (บั๊กเดิม
+// ที่ทำให้ dedupe ไม่ทำงาน — เตือนซ้ำได้ทุกครั้งที่ trigger รัน)
+function _dedupeCellToDateStr(cellVal) {
+  if (cellVal instanceof Date) {
+    return Utilities.formatDate(cellVal, 'Asia/Bangkok', 'yyyy-MM-dd');
+  }
+  return String(cellVal || '');
+}
+
+function _hasAlertBeenSentToday(key) {
+  const sheet = _ensureAlertDedupeSheet();
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return false;
+
+  const today = Utilities.formatDate(new Date(), 'Asia/Bangkok', 'yyyy-MM-dd');
+  const rows = sheet.getRange(2, 1, lastRow - 1, 4).getValues();
+  return rows.some(r => r[0] === key && _dedupeCellToDateStr(r[3]) === today);
+}
+
+function _markAlertSent(key, ticker, type) {
+  const sheet = _ensureAlertDedupeSheet();
+  const today = Utilities.formatDate(new Date(), 'Asia/Bangkok', 'yyyy-MM-dd');
+  const row = sheet.getLastRow() + 1;
+  // ล็อกคอลัมน์ D เป็น Plain Text ก่อนเขียน กัน Sheets แปลงเป็น Date อัตโนมัติอีก
+  sheet.getRange(row, 4).setNumberFormat('@');
+  sheet.getRange(row, 1, 1, 4).setValues([[key, ticker, type, today]]);
+}
+
+// ── ล้าง log เก่ากว่า 7 วัน กันชีตบวม เรียกจากในตัวเช็คทุกครั้ง ──
+function _cleanupOldAlertDedupeRows() {
+  const sheet = _ensureAlertDedupeSheet();
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return;
+
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - 7);
+  const rows = sheet.getRange(2, 1, lastRow - 1, 4).getValues();
+  const kept = rows.filter(r => {
+    const d = new Date(r[3]);
+    return !isNaN(d) && d >= cutoff;
+  });
+
+  if (kept.length !== rows.length) {
+    sheet.getRange(2, 1, rows.length, 4).clearContent();
+    if (kept.length > 0) sheet.getRange(2, 1, kept.length, 4).setValues(kept);
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// ฟังก์ชัน 1: เช็ค Watchlist ที่เข้า Buy Zone แล้วยิงแจ้งเตือน
+// เงื่อนไข: currentPrice <= targetPrice (zone === 'ready')
+// ══════════════════════════════════════════════════════════
+function checkWatchlistBuyZoneAlerts() {
+  try {
+    _cleanupOldAlertDedupeRows();
+
+    const data = getWatchlistData();
+    if (!data || !data.success) {
+      logError('checkWatchlistBuyZoneAlerts', new Error('getWatchlistData ล้มเหลว'));
+      return;
+    }
+
+    let sentCount = 0;
+    (data.items || []).forEach(item => {
+      if (item.zone !== 'ready') return; // ไม่เข้า Buy Zone ข้ามไป
+
+      const key = 'BUYZONE_' + item.ticker + '_' + item.market;
+      if (_hasAlertBeenSentToday(key)) return; // เตือนไปแล้ววันนี้ ข้าม
+
+      const flag = item.market === 'TH' ? '🇹🇭' : '🇺🇸';
+      const cur = item.market === 'TH' ? '฿' : '$';
+      const msg =
+        `🟢 <b>${item.ticker}</b> ${flag} เข้าโซนซื้อแล้ว!\n\n` +
+        `ราคาปัจจุบัน: ${cur}${item.currentPrice.toFixed(2)}\n` +
+        `ราคาเป้าหมาย: ${cur}${item.targetPrice.toFixed(2)}\n` +
+        (item.supportPrice ? `แนวรับ: ${cur}${item.supportPrice.toFixed(2)}\n` : '') +
+        `\n📱 เปิดแอปเพื่อดูรายละเอียด/วิเคราะห์เพิ่มเติม`;
+
+      if (_sendAlertTelegramMessage(msg)) {
+        _markAlertSent(key, item.ticker, 'BUYZONE');
+        sentCount++;
+      }
+      Utilities.sleep(300); // กันยิง Telegram ถี่เกินไป
+    });
+
+    Logger.log('✅ checkWatchlistBuyZoneAlerts เสร็จสิ้น — ส่งแจ้งเตือน ' + sentCount + ' รายการ');
+  } catch (e) {
+    logError('checkWatchlistBuyZoneAlerts', e);
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// ฟังก์ชัน 2: เช็คหุ้นที่ถืออยู่ (โหมด Fast) ว่าหลุด Hard Stop หรือยัง
+// ใช้ getStockDetailData() ตัวเดิม (lane='fast') เพื่อดึง tradePlan.hardStop
+// ที่คำนวณตาม Risk Management ไว้แล้ว — ไม่คำนวณ Hard Stop เองใหม่
+// ══════════════════════════════════════════════════════════
+function checkHoldingsStopLossAlerts() {
+  try {
+    _cleanupOldAlertDedupeRows();
+
+    const holdings = getHoldingsData();
+    if (!holdings) {
+      logError('checkHoldingsStopLossAlerts', new Error('getHoldingsData ล้มเหลว'));
+      return;
+    }
+
+    const settings = getSettingsData();
+    const stockModes = (settings && settings.success) ? settings.stockModes : {};
+
+    let sentCount = 0;
+    const allHoldings = [
+      ...(holdings.us || []).map(r => ({ ...r, market: 'US' })),
+      ...(holdings.th || []).map(r => ({ ...r, market: 'TH' }))
+    ];
+
+    allHoldings.forEach(row => {
+      const ticker = row.ticker;
+      if (!ticker) return;
+
+      const qty = row.sharesRemain;
+      if (!qty || qty <= 0) return; // ขายหมดแล้ว ข้าม
+
+      const cfg = stockModes[ticker];
+      if (!cfg || cfg.mode !== 'Fast') return; // เช็คเฉพาะโหมด Fast (มี Hard Stop ชัดเจน)
+
+      const detail = getStockDetailData(ticker, row.market);
+      if (!detail || !detail.success || detail.lane !== 'fast') return;
+
+      const hardStop = detail.tradePlan && detail.tradePlan.hardStop;
+      const currentPrice = detail.riskManagement && detail.riskManagement.currentPrice;
+      if (!hardStop || !currentPrice) return;
+
+      if (currentPrice >= hardStop) return; // ยังไม่หลุด Stop
+
+      const key = 'STOPLOSS_' + ticker + '_' + row.market;
+      if (_hasAlertBeenSentToday(key)) return; // เตือนไปแล้ววันนี้ ข้าม
+
+      const flag = row.market === 'TH' ? '🇹🇭' : '🇺🇸';
+      const cur = row.market === 'TH' ? '฿' : '$';
+      const pl = parseFloat(row.unrealizedPL) || 0;
+      const pct = (parseFloat(row.unrealizedPct) || 0) * 100;
+
+      const msg =
+        `🔴 <b>${ticker}</b> ${flag} หลุด Hard Stop แล้ว!\n\n` +
+        `ราคาปัจจุบัน: ${cur}${currentPrice.toFixed(2)}\n` +
+        `Hard Stop: ${cur}${hardStop.toFixed(2)}\n` +
+        `กำไร/ขาดทุน: ${pl >= 0 ? '+' : ''}${fmtNumForAlert(pl)} (${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%)\n` +
+        `\n⚠️ ระบบ Fast Trade แนะนำให้ยึดวินัย Stop ก่อน — เปิดแอปเพื่อดูรายละเอียด/คำนวณการขาย`;
+
+      if (_sendAlertTelegramMessage(msg)) {
+        _markAlertSent(key, ticker, 'STOPLOSS');
+        sentCount++;
+      }
+      Utilities.sleep(300);
+    });
+
+    Logger.log('✅ checkHoldingsStopLossAlerts เสร็จสิ้น — ส่งแจ้งเตือน ' + sentCount + ' รายการ');
+  } catch (e) {
+    logError('checkHoldingsStopLossAlerts', e);
+  }
+}
+
+// ── format ตัวเลขแบบง่ายๆ สำหรับข้อความ Telegram (กันพึ่ง fmtNum ฝั่ง client) ──
+function fmtNumForAlert(n) {
+  return Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+// ══════════════════════════════════════════════════════════
+// ตั้ง Trigger — เช็คทุก 1 ชั่วโมง (ปรับความถี่ได้ที่ .everyHours())
+// ══════════════════════════════════════════════════════════
+function createAlertCheckTriggers() {
+  ScriptApp.getProjectTriggers().forEach(t => {
+    const fn = t.getHandlerFunction();
+    if (fn === 'checkWatchlistBuyZoneAlerts' || fn === 'checkHoldingsStopLossAlerts') {
+      ScriptApp.deleteTrigger(t);
+    }
+  });
+
+  ScriptApp.newTrigger('checkWatchlistBuyZoneAlerts').timeBased().everyHours(1).create();
+  ScriptApp.newTrigger('checkHoldingsStopLossAlerts').timeBased().everyHours(1).create();
+
+  Logger.log('✅ ตั้ง trigger แจ้งเตือนแล้ว — เช็คทุก 1 ชั่วโมง');
+}
+
+// ── ทดสอบยิงข้อความก่อนตั้ง trigger จริง ──
+function testSendAlertMessage() {
+  const ok = _sendAlertTelegramMessage('🧪 ทดสอบระบบแจ้งเตือน — ถ้าเห็นข้อความนี้แปลว่าตั้งค่าถูกต้อง');
+  Logger.log(ok ? '✅ ส่งสำเร็จ' : '❌ ส่งไม่สำเร็จ ดู log ด้านบน');
+}
+
+
 ## analysis_portfolio.gs
 // ============================================================
 // analysis_portfolio.gs — เฟส 3: Analysis_Portfolio
@@ -8998,6 +9958,8 @@ function getPortfolioAnalysis() {
              totalTHB: 0, needRebalanceCount: 0, overConcentrationCount: 0 };
   }
 }
+
+
 
 
 ## atr.gs
@@ -9234,6 +10196,8 @@ function createATRTrigger() {
 
   Logger.log("✅ ATR Trigger: check 30 นาที, US High 15 นาที");
 }
+
+
 
 
 
@@ -9486,6 +10450,8 @@ function createATR14ReminderTrigger() {
 
   Logger.log("✅ ATR14 Reminder Trigger: ทุกวันอาทิตย์ 19:00");
 }
+
+
 
 
 
@@ -10295,6 +11261,127 @@ function cmdAnalyze(text) {
 
 
 
+## backup_notify.gs
+// ============================================================
+// backup_notify.gs
+// แจ้งเตือนผลการ Backup (สำเร็จ / ล้มเหลว) ผ่าน Telegram
+// ------------------------------------------------------------
+// ⚠️ ไฟล์นี้ "แทนที่" ฟังก์ชัน backupAllSheets() และ _backupNotify() เดิม
+// ที่อยู่ใน webapp_00c_helpers.gs
+//
+// สาเหตุที่ต้องแก้: ฟังก์ชัน _backupNotify() เดิมเรียก sendTelegram()
+// ซึ่งไม่มีฟังก์ชันนี้อยู่จริงในโปรเจกต์ (มีแต่ sendTelegramSafe() /
+// sendTelegramError()) เลยไม่เคยส่งข้อความ Telegram ได้จริงเวลา backup
+// เสร็จ — ไฟล์นี้แก้ให้ใช้ฟังก์ชันที่มีอยู่แล้วแทน และแยกแจ้งผลสำเร็จ/
+// ล้มเหลวเป็นรายไฟล์ให้ชัดเจนขึ้น
+//
+// วิธีติดตั้ง:
+//  1. เปิด webapp_00c_helpers.gs แล้ว "ลบ" ฟังก์ชัน backupAllSheets()
+//     กับ _backupNotify() เดิมทิ้ง (ชื่อฟังก์ชันซ้ำกันจะรันไม่ได้)
+//     — ค่าคงที่ BACKUP_TARGETS, BACKUP_FOLDER_NAME, BACKUP_RETENTION_DAYS
+//     และฟังก์ชัน _getOrCreateBackupFolder(), _cleanupOldBackups(),
+//     setupDailyBackupTrigger(), testBackupNow() "เก็บไว้เหมือนเดิม"
+//  2. เพิ่มไฟล์นี้ (backup_notify.gs) เข้าไปในโปรเจกต์
+//  3. ต้องเคยรัน setupProperties() ตั้งค่า BOT_TOKEN / CHAT_ID ไว้แล้ว
+//  4. รัน testBackupNow() 1 ครั้งเพื่อทดสอบว่าได้รับข้อความ Telegram
+// ============================================================
+
+function backupAllSheets() {
+  const todayStr = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd');
+
+  try {
+    const invalid = BACKUP_TARGETS.filter(t => !t.id || t.id.indexOf('PASTE_') === 0);
+    if (invalid.length === BACKUP_TARGETS.length) {
+      Logger.log('backupAllSheets: ยังไม่ได้ใส่ Spreadsheet ID จริงใน BACKUP_TARGETS เลย — ข้าม');
+      sendTelegramSafe(
+        '⚠️ Backup ' + todayStr + '\nยังไม่ได้ตั้งค่า BACKUP_TARGETS — ข้ามการสำรองข้อมูล'
+      );
+      return;
+    }
+
+    const folder = _getOrCreateBackupFolder();
+    const results = [];
+
+    BACKUP_TARGETS.forEach(target => {
+      if (!target.id || target.id.indexOf('PASTE_') === 0) {
+        results.push({ label: target.label, status: 'skipped_no_id' });
+        return;
+      }
+      try {
+        const backupName = target.label + ' - Backup ' + todayStr;
+
+        // กันสำรองซ้ำถ้ารันมากกว่า 1 ครั้งในวันเดียวกัน
+        const already = folder.getFilesByName(backupName);
+        if (already.hasNext()) {
+          Logger.log('backupAllSheets: "' + backupName + '" มีอยู่แล้ว — ข้าม');
+          results.push({ label: target.label, status: 'skipped_duplicate' });
+          return;
+        }
+
+        const sourceFile = DriveApp.getFileById(target.id);
+        sourceFile.makeCopy(backupName, folder);
+        Logger.log('backupAllSheets: สำรอง "' + target.label + '" สำเร็จ → ' + backupName);
+        results.push({ label: target.label, status: 'ok' });
+      } catch (e) {
+        Logger.log('backupAllSheets: สำรอง "' + target.label + '" ล้มเหลว — ' + e.message);
+        results.push({ label: target.label, status: 'error', error: e.message });
+      }
+    });
+
+    const cleaned = _cleanupOldBackups(folder);
+    _backupNotify(results, cleaned, todayStr);
+
+  } catch (e) {
+    // ครอบ error ระดับฟังก์ชันทั้งหมด (เช่น ไม่มีสิทธิ์เข้าถึง Drive)
+    // แจ้งเตือนทันทีว่า backup ล้มเหลวทั้งกระบวนการ
+    sendTelegramError('backupAllSheets', e);
+  }
+}
+
+/**
+ * สร้างและส่งข้อความสรุปผล backup รายไฟล์ (สำเร็จ / ล้มเหลว / ข้าม)
+ * ผ่าน sendTelegramSafe() ซึ่งมีอยู่แล้วในโปรเจกต์ (helper.gs)
+ */
+function _backupNotify(results, cleaned, todayStr) {
+  const okList   = results.filter(r => r.status === 'ok');
+  const errList  = results.filter(r => r.status === 'error');
+  const skipList = results.filter(r => r.status.indexOf('skipped') === 0);
+
+  const allFailed   = results.length > 0 && okList.length === 0 && errList.length > 0;
+  const headerIcon  = allFailed ? '🚨' : (errList.length ? '⚠️' : '✅');
+
+  let msg = headerIcon + ' Backup ประจำวัน ' + todayStr + '\n';
+  msg += '━━━━━━━━━━━━\n';
+
+  if (okList.length) {
+    msg += '✅ สำเร็จ (' + okList.length + '):\n';
+    okList.forEach(r => { msg += '  • ' + r.label + '\n'; });
+  }
+
+  if (errList.length) {
+    msg += '❌ ล้มเหลว (' + errList.length + '):\n';
+    errList.forEach(r => { msg += '  • ' + r.label + ' — ' + r.error + '\n'; });
+  }
+
+  if (skipList.length) {
+    msg += '⏭ ข้าม (' + skipList.length + '):\n';
+    skipList.forEach(r => {
+      const reason = r.status === 'skipped_duplicate'
+        ? 'สำรองไปแล้ววันนี้'
+        : 'ยังไม่ได้ใส่ Spreadsheet ID';
+      msg += '  • ' + r.label + ' — ' + reason + '\n';
+    });
+  }
+
+  if (cleaned) {
+    msg += '🗑 ลบไฟล์เก่าเกิน ' + BACKUP_RETENTION_DAYS + ' วัน: ' + cleaned + ' ไฟล์\n';
+  }
+
+  msg += '🕐 ' + getNow();
+
+  Logger.log(msg);
+  sendTelegramSafe(msg);
+}
 
 
 ## bot.gs
@@ -10513,7 +11600,223 @@ function deleteAllTriggers() {
 }
 
 
+## cleanup_daily_close_log.gs
+// ============================================================
+// cleanup_daily_close_log.gs — ลบราคาหุ้นเก่าใน Daily_Close_Log (ไฟล์ภายนอก)
+// เงื่อนไข: ticker ที่ไม่มีทั้งใน Holdings (US/TH) และ Watchlist (active)
+// จะถูกลบทิ้ง กันไฟล์บวมจากหุ้นที่ขายหมด/เอาออกจาก Watchlist ไปนานแล้ว
+// ⚠️ ใช้ EXTERNAL_LOG_SHEET_ID / EXTERNAL_LOG_SHEET_NAME / EXTERNAL_LOG_COL
+//    ตัวเดียวกับ webapp_09_external_history.gs
+// ============================================================
+
+// ── รวบรวม ticker ที่ "ต้องเก็บไว้" — ถือครองอยู่ ( เพิ่มเงื่อนไข `sharesRemain > 0) + Watchlist ที่ยัง active ──
+function _getTickersToKeep() {
+  const keep = new Set();
+
+  try {
+    const holdings = getHoldingsData();
+    (holdings.us || []).forEach(r => {
+      const qty = parseFloat(r.sharesRemain);
+      if (r.ticker && qty > 0) keep.add(String(r.ticker).trim().toUpperCase()); // ← เพิ่มเงื่อนไข qty > 0
+    });
+    (holdings.th || []).forEach(r => {
+      const qty = parseFloat(r.sharesRemain);
+      if (r.ticker && qty > 0) keep.add(String(r.ticker).trim().toUpperCase()); // ← เพิ่มเงื่อนไข qty > 0
+    });
+  } catch (e) { logError('_getTickersToKeep:holdings', e); }
+
+  try {
+    const watchlist = getWatchlistData();
+    (watchlist.items || []).forEach(r => { if (r.ticker) keep.add(String(r.ticker).trim().toUpperCase()); });
+  } catch (e) { logError('_getTickersToKeep:watchlist', e); }
+
+  return keep;
+}
+
+// ══════════════════════════════════════════════════════════
+// ลบแถวใน Daily_Close_Log ของ ticker ที่ไม่อยู่ใน keep-list
+// คืนสรุปผล { success, deletedRows, keptTickers, removedTickers }
+// ══════════════════════════════════════════════════════════
+function cleanupDailyCloseHighLog() {
+  try {
+    if (!EXTERNAL_LOG_SHEET_ID || EXTERNAL_LOG_SHEET_ID === 'PASTE_SPREADSHEET_ID_HERE') {
+      throw new Error('ยังไม่ได้ตั้งค่า EXTERNAL_LOG_SHEET_ID');
+    }
+
+    const keepSet = _getTickersToKeep();
+    if (keepSet.size === 0) {
+      logError('cleanupDailyCloseHighLog', new Error('keep-list ว่างเปล่า — ยกเลิกการลบเพื่อความปลอดภัย (กันลบทั้งชีตโดยไม่ตั้งใจถ้า Holdings/Watchlist โหลดพลาด)'));
+      return { success: false, error: 'ตรวจไม่พบ ticker ใน Holdings/Watchlist เลย — ยกเลิกการลบเพื่อความปลอดภัย' };
+    }
+
+    const extSS = SpreadsheetApp.openById(EXTERNAL_LOG_SHEET_ID);
+    const sheet = extSS.getSheetByName(EXTERNAL_LOG_SHEET_NAME);
+    if (!sheet) throw new Error('ไม่พบชีต "' + EXTERNAL_LOG_SHEET_NAME + '"');
+
+    const lastRow = sheet.getLastRow();
+    if (lastRow < 2) return { success: true, deletedRows: 0, message: 'ไม่มีข้อมูลให้ลบ' };
+
+    const numRows = lastRow - 1;
+    const data = sheet.getRange(2, 1, numRows, 6).getValues();
+
+    const removedTickers = new Set();
+    const keptRows = [];
+
+    data.forEach(row => {
+      const symbol = String(row[EXTERNAL_LOG_COL.SYMBOL - 1] || '').trim().toUpperCase();
+      if (!symbol) return; // แถวว่าง ข้ามไป (ไม่เก็บ ไม่นับลบ)
+      if (keepSet.has(symbol)) {
+        keptRows.push(row);
+      } else {
+        removedTickers.add(symbol);
+      }
+    });
+
+    const deletedRows = numRows - keptRows.length;
+
+    if (deletedRows > 0) {
+      // ล้างพื้นที่ข้อมูลเดิมทั้งหมดแล้วเขียนแถวที่เหลือกลับเข้าไปใหม่ (เร็วกว่าลบทีละแถว)
+      sheet.getRange(2, 1, numRows, 6).clearContent();
+      if (keptRows.length > 0) {
+        sheet.getRange(2, 1, keptRows.length, 6).setValues(keptRows);
+      }
+    }
+
+      // ── ลบใน Highest_Close_Summary ด้วย keep-list ชุดเดียวกัน ──
+    const highestResult = _cleanupHighestCloseSummary(keepSet);
+
+    return {
+      success: true,
+      dailyCloseLog: {
+        deletedRows,
+        keptRows: keptRows.length,
+        removedTickers: Array.from(removedTickers)
+      },
+      highestCloseSummary: highestResult,
+      keptTickerCount: keepSet.size
+    };
+  } catch (e) {
+    logError('cleanupDailyCloseHighLog', e);
+    return { success: false, error: e.message };
+  }
+}
+
+
+// ══════════════════════════════════════════════════════════
+// ลบแถวใน Highest_Close_Summary ของ ticker ที่ไม่อยู่ใน keep-list
+// ใช้ HIGHEST_CLOSE_SHEET_NAME / HIGHEST_CLOSE_COL ตัวเดียวกับ
+// webapp_09_external_history.gs (คอลัมน์ A=Symbol, B=HighestClose, C=Date)
+// ══════════════════════════════════════════════════════════
+function _cleanupHighestCloseSummary(keepSet) {
+  try {
+    const extSS = SpreadsheetApp.openById(EXTERNAL_LOG_SHEET_ID);
+    const sheet = extSS.getSheetByName(HIGHEST_CLOSE_SHEET_NAME);
+    if (!sheet) return { deletedRows: 0, removedTickers: [], skipped: true, reason: 'ไม่พบชีต ' + HIGHEST_CLOSE_SHEET_NAME };
+
+    const lastRow = sheet.getLastRow();
+    if (lastRow < 2) return { deletedRows: 0, removedTickers: [] };
+
+    const numRows = lastRow - 1;
+    const data = sheet.getRange(2, 1, numRows, 5).getValues();
+
+    const removedTickers = new Set();
+    const keptRows = [];
+
+    data.forEach(row => {
+      const symbol = String(row[HIGHEST_CLOSE_COL.SYMBOL - 1] || '').trim().toUpperCase();
+      if (!symbol) return;
+      if (keepSet.has(symbol)) {
+        keptRows.push(row);
+      } else {
+        removedTickers.add(symbol);
+      }
+    });
+
+    const deletedRows = numRows - keptRows.length;
+
+    if (deletedRows > 0) {
+      sheet.getRange(2, 1, numRows, 5).clearContent();
+      if (keptRows.length > 0) {
+        sheet.getRange(2, 1, keptRows.length, 5).setValues(keptRows);
+      }
+    }
+
+    return { deletedRows, removedTickers: Array.from(removedTickers) };
+  } catch (e) {
+    logError('_cleanupHighestCloseSummary', e);
+    return { deletedRows: 0, removedTickers: [], error: e.message };
+  }
+}
+
+
+// ══════════════════════════════════════════════════════════
+// ตั้ง trigger รันอัตโนมัติทุกวัน ตอนตี 3 (หลังราคาปิดตลาด/หลัง backfill รายวัน)
+// รันฟังก์ชันนี้ "ครั้งเดียว" จาก Apps Script Editor (เลือกฟังก์ชันนี้ → กด Run)
+// เพื่อลงทะเบียน trigger — วางโค้ดอย่างเดียวไม่พอ ต้องกด Run เอง 1 ครั้ง
+// ══════════════════════════════════════════════════════════
+function createcleanupDailyCloseHighLogTrigger() {
+  // ลบ trigger เก่าของฟังก์ชันนี้ก่อน กันสร้างซ้ำถ้าเคยรันมาแล้ว
+  ScriptApp.getProjectTriggers().forEach(t => {
+    if (t.getHandlerFunction() === 'cleanupDailyCloseHighLog') {
+      ScriptApp.deleteTrigger(t);
+    }
+  });
+
+  ScriptApp.newTrigger('cleanupDailyCloseHighLog')
+    .timeBased()
+    .everyDays(1)
+    .atHour(3)
+    .create();
+
+  Logger.log('✅ ตั้ง trigger เรียบร้อย — จะรัน cleanupDailyCloseHighLog() ทุกวันตอนตี 3');
+}
+
+
+// ── ทดสอบดูผลลัพธ์ก่อนตั้ง trigger จริง (ไม่ลบจริง แค่รายงานว่าจะลบอะไรบ้าง) ──
+function testcleanupDailyCloseHighLogDryRun() {
+  const keepSet = _getTickersToKeep();
+  Logger.log('Ticker ที่จะเก็บไว้ (' + keepSet.size + ' ตัว): ' + Array.from(keepSet).join(', '));
+
+  const extSS = SpreadsheetApp.openById(EXTERNAL_LOG_SHEET_ID);
+
+  // ── ตรวจ Daily_Close_Log ──
+  const logSheet = extSS.getSheetByName(EXTERNAL_LOG_SHEET_NAME);
+  const logLastRow = logSheet.getLastRow();
+  if (logLastRow < 2) {
+    Logger.log('Daily_Close_Log: ไม่มีข้อมูล');
+  } else {
+    const logData = logSheet.getRange(2, 1, logLastRow - 1, 6).getValues();
+    const willRemoveLog = new Set();
+    logData.forEach(row => {
+      const symbol = String(row[EXTERNAL_LOG_COL.SYMBOL - 1] || '').trim().toUpperCase();
+      if (symbol && !keepSet.has(symbol)) willRemoveLog.add(symbol);
+    });
+    Logger.log('Daily_Close_Log — Ticker ที่จะถูกลบ (' + willRemoveLog.size + ' ตัว): ' + Array.from(willRemoveLog).join(', '));
+  }
+
+  // ── ตรวจ Highest_Close_Summary ──
+  const summarySheet = extSS.getSheetByName(HIGHEST_CLOSE_SHEET_NAME);
+  if (!summarySheet) {
+    Logger.log('Highest_Close_Summary: ไม่พบชีตนี้');
+    return;
+  }
+  const summaryLastRow = summarySheet.getLastRow();
+  if (summaryLastRow < 2) {
+    Logger.log('Highest_Close_Summary: ไม่มีข้อมูล');
+    return;
+  }
+  const summaryData = summarySheet.getRange(2, 1, summaryLastRow - 1, 3).getValues();
+  const willRemoveSummary = new Set();
+  summaryData.forEach(row => {
+    const symbol = String(row[HIGHEST_CLOSE_COL.SYMBOL - 1] || '').trim().toUpperCase();
+    if (symbol && !keepSet.has(symbol)) willRemoveSummary.add(symbol);
+  });
+  Logger.log('Highest_Close_Summary — Ticker ที่จะถูกลบ (' + willRemoveSummary.size + ' ตัว): ' + Array.from(willRemoveSummary).join(', '));
+}
+
+
 ## config.gs
+
 // ========================================
 // config.gs — อัปเดตให้ตรงกับ sheet จริง
 // ========================================
@@ -10729,6 +12032,8 @@ const BACKEND_ATR = {
   START_ROW: 2
 };
 
+
+
 ## dashboard.gs
 // ========================================
 // dashboard.gs
@@ -10872,6 +12177,7 @@ function _buildProgressBar(pct, total) {
   const empty  = total - filled;
   return "🟩".repeat(filled) + "⬜".repeat(empty);
 }
+
 
 
 
@@ -11157,7 +12463,6 @@ function collectAllData() {
     thWorst: thSorted[thSorted.length - 1] || null
   };
 }
-
 
 
 ## dca_analysis.gs
@@ -12661,6 +13966,9 @@ function cmdBacktest(text) {
 
 
 
+
+
+
 ## dividend.gs
 // ========================================
 // dividend.gs
@@ -12761,6 +14069,7 @@ function createMonthlyDividendTrigger() {
   Logger.log("✅ Dividend Trigger: วันที่ 1 ของเดือน 09:00");
 
 }
+
 
 ## fund.gs
 // ========================================
@@ -13024,6 +14333,8 @@ function createNAVReminderTrigger() {
 
   Logger.log("✅ NAV Reminder Trigger: ทุกวัน 18:00 (ข้ามวันอาทิตย์อัตโนมัติ)");
 }
+
+
 
 
 
@@ -13631,6 +14942,9 @@ function fetchYahooHistory(symbol, days) {
 function logInfo(fnName, message) {
   Logger.log("[INFO] " + fnName + " : " + message);
 }
+
+
+
 
 
 
@@ -14633,6 +15947,8 @@ function createPortfolioTrigger() {
 
   Logger.log("✅ Portfolio DCA Trigger: ทุก 30 นาที");
 }
+
+
 
 
 
@@ -17028,6 +18344,55 @@ body {
   padding: 0 2px 12px;
 }
 
+.int-card {
+  background: var(--card2);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+.int-card-left { min-width: 0; }
+.int-card-ticker { font-size: 17px; font-weight: 800; color: var(--text); }
+.int-card-company { font-size: 12.5px; color: var(--muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.int-card-note { font-size: 11.5px; color: var(--purple); margin-top: 4px; }
+.int-card-date { font-size: 10.5px; color: var(--muted); margin-top: 4px; }
+.int-card-actions { display: flex; gap: 8px; flex-shrink: 0; }
+.int-star-btn, .int-del-btn {
+  width: 40px; height: 40px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; border: 1px solid var(--line); background: var(--card);
+  cursor: pointer;
+}
+.int-star-btn:active, .int-del-btn:active { transform: scale(0.92); }
+
+
+.sheet-close-btn {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: var(--card2);
+  color: var(--muted);
+  font-size: 15px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 1;
+}
+.sheet-close-btn:active {
+  background: var(--card);
+  transform: scale(0.92);
+}
+
 
 </style>
 
@@ -17155,6 +18520,7 @@ function _getFeeUS() {
     return { success: false, error: e.message };
   }
 }*/
+
 
 
 
@@ -17446,11 +18812,6 @@ function _getFee() {
 }
 
 
-
-
-
-
-
 ## system.gs
 // ========================================
 // system.gs
@@ -17576,9 +18937,6 @@ function showHelp() {
 
   sendTelegramSafe(msg);
 }
-
-
-
 
 
 ## update.gs
@@ -17741,6 +19099,107 @@ function createUpdateTrigger() {
   Logger.log("✅ Update Triggers: TH+US Price ทุก 15 นาที");
 }
 
+
+
+## watchlist_auto_update.gs
+// ============================================================
+// watchlist_auto_update.gs
+// อัปเดตราคาปัจจุบันในชีต "⭐ Watchlist" อัตโนมัติผ่าน Trigger
+// ------------------------------------------------------------
+// เดิม updateWatchlistPricesWeb() (webapp_07_watchlist.gs) ทำงานถูกต้อง
+// แต่ถูกเรียกจากปุ่ม "รีเฟรช" ในหน้าเว็บแอปเท่านั้น ไม่มี Trigger อัตโนมัติ
+// ทำให้ราคาในคอลัมน์ I ค้างถ้าไม่มีใครเปิดแอป — ไฟล์นี้เพิ่มชั้นห่อ
+// (wrapper) ให้รันเป็นเวลาอัตโนมัติ โดย "ไม่แก้" updateWatchlistPricesWeb()
+// เดิมเลย (reuse ตรงๆ กันโค้ดซ้ำซ้อน)
+//
+// วิธีติดตั้ง:
+//  1. เพิ่มไฟล์นี้เข้าไปในโปรเจกต์ (ไม่ต้องลบ/แก้ไฟล์เดิม)
+//  2. รัน createWatchlistPriceUpdateTrigger() ครั้งเดียว (ตั้ง Trigger)
+//  3. (แนะนำ) รัน testUpdateWatchlistPricesAuto() ทดสอบ 1 ครั้งก่อน
+// ============================================================
+
+// ── รันอัตโนมัติทุก 30 นาทีผ่าน Trigger ──
+// (ตั้งห่างจาก updateThaiPrice/updateUSPriceTrigger ที่รันทุก 15 นาที
+//  เพื่อลดโอกาสยิง Yahoo Finance พร้อมกันถี่เกินไปจนโดนบล็อกชั่วคราว)
+//
+// อัปเดตทั้งคอลัมน์ I (ราคา ณ ปัจจุบัน) และคอลัมน์ J (% เปลี่ยนแปลง —
+// เทียบกับราคาตอนเพิ่มเข้า Watchlist ที่คอลัมน์ H) เหมือนกับที่
+// updateWatchlistPricesWeb() ทำตอนกดปุ่ม "รีเฟรช" ในหน้าเว็บแอป
+function updateWatchlistPricesAuto() {
+  try {
+    const sheet = getSheet(WATCHLIST_SHEET.NAME);
+    const lastRow = sheet.getLastRow();
+    if (lastRow < WATCHLIST_SHEET.START_ROW) {
+      logInfo('updateWatchlistPricesAuto', 'ไม่มีรายการใน Watchlist');
+      return;
+    }
+
+    const numRows = lastRow - WATCHLIST_SHEET.START_ROW + 1;
+    const rows = sheet.getRange(WATCHLIST_SHEET.START_ROW, 1, numRows, 11).getValues();
+
+    let updated = 0;
+    const failed = [];
+
+    rows.forEach((row, i) => {
+      const ticker = String(row[0] || '').trim();
+      const status = String(row[10] || 'watchlist').trim().toLowerCase();
+      if (!ticker || status === 'cancel') return;
+
+      const market = String(row[1] || 'US').trim();
+      const priceAdded = parseFloat(row[7]) || 0; // col H — ราคาตอนเพิ่มเข้า Watchlist
+
+      const quote = _wlFetchYahooQuote(ticker, market);
+      if (!quote) { failed.push(ticker); return; }
+
+      const r = WATCHLIST_SHEET.START_ROW + i;
+      sheet.getRange(r, 9).setValue(quote.price); // col I — ราคาปัจจุบัน
+      if (priceAdded > 0) {
+        sheet.getRange(r, 10).setValue(((quote.price - priceAdded) / priceAdded) * 100); // col J — % เปลี่ยนแปลง
+      }
+      updated++;
+      Utilities.sleep(200);
+    });
+
+    logInfo('updateWatchlistPricesAuto',
+      'อัปเดตราคา (คอลัมน์ I/J) Watchlist แล้ว ' + updated + ' ตัว' +
+      (failed.length ? ' / ล้มเหลว ' + failed.length + ' ตัว' : '')
+    );
+
+    // แจ้งเตือนเฉพาะตอนมีตัวที่ดึงราคาไม่ได้ — กันสแปม Telegram ตอนอัปเดตปกติทุก 30 นาที
+    if (failed.length) {
+      sendTelegramSafe(
+        '⚠️ อัปเดตราคา Watchlist บางตัวไม่สำเร็จ\n' +
+        '✅ สำเร็จ ' + updated + ' ตัว\n' +
+        '❌ ล้มเหลว ' + failed.length + ' ตัว: ' + failed.join(', ') + '\n' +
+        '🕐 ' + getNow()
+      );
+    }
+  } catch (e) {
+    sendTelegramError('updateWatchlistPricesAuto', e);
+  }
+}
+
+// ── ตั้ง Trigger รันอัตโนมัติ — รันฟังก์ชันนี้ครั้งเดียวตอนติดตั้ง ──
+function createWatchlistPriceUpdateTrigger() {
+  ScriptApp.getProjectTriggers()
+    .filter(t => t.getHandlerFunction() === 'updateWatchlistPricesAuto')
+    .forEach(t => ScriptApp.deleteTrigger(t));
+
+  ScriptApp.newTrigger('updateWatchlistPricesAuto')
+    .timeBased()
+    .everyMinutes(30)
+    .create();
+
+  Logger.log('createWatchlistPriceUpdateTrigger: ตั้ง Trigger อัปเดตราคา Watchlist ทุก 30 นาทีแล้ว');
+  try {
+    SpreadsheetApp.getUi().alert('✅ ตั้ง Trigger อัปเดตราคา Watchlist อัตโนมัติแล้ว (ทุก 30 นาที)');
+  } catch (e) { /* รันจาก Editor ไม่มี UI ก็ไม่เป็นไร */ }
+}
+
+// ── ทดสอบรันด้วยมือ 1 ครั้ง — เช็คคอลัมน์ I/J ในชีต ⭐ Watchlist ว่าอัปเดตจริง ──
+function testUpdateWatchlistPricesAuto() {
+  updateWatchlistPricesAuto();
+}
 
 
 
@@ -17945,7 +19404,7 @@ function saveDividend(data) {
     const sheet = getSheet(SHEETS.DIV);
     if (!sheet) throw new Error('ไม่พบ sheet: ' + SHEETS.DIV);
 
-    const row = _getNextEmptyRow(sheet, 3, START_ROW.DIV); // เช็คจาก col C (วันที่ XD)
+    const row = _getNextEmptyRow(sheet, 3, START_ROW.DIV);
     const xdDate  = new Date(data.xdDate);
     const recDate = new Date(data.recDate);
 
@@ -17958,13 +19417,16 @@ function saveDividend(data) {
     sheet.getRange(row, 10).setNumberFormat('#,##0.00000');
     sheet.getRange(row, 11).setNumberFormat('#,##0.00');
 
+    // ── เขียนภาษีหัก ณ ที่จ่าย (USD) ที่กรอกเอง แทนสูตร Excel เดิม ──
+    const taxUsd = parseFloat(data.taxWithheld) || 0;
+    sheet.getRange(row, DIV_COL.TAX_USD).setValue(taxUsd).setNumberFormat('#,##0.00');
+
     return { success: true, row: row };
   } catch (e) {
     logError('saveDividend', e);
     return { success: false, error: e.message };
   }
 }
-
 
 
 
@@ -18005,13 +19467,6 @@ function testSaveTHStock() {
   Logger.log(JSON.stringify(result));
 }
 
-
-
-
-
-
-
-
 ## webapp_00b_helpers.gs
 // ============================================================
 // webapp_00b_helpers.gs — ฟังก์ชันช่วยกลางที่ไฟล์อื่นเรียกใช้ร่วมกัน
@@ -18049,8 +19504,6 @@ function logError(functionName, error) {
     // เงียบไว้ — ไม่ทำให้ error หลักหายไป
   }
 }
-
-
 
 
 ## webapp_00c_helpers.gs
@@ -18471,6 +19924,7 @@ function writeLivePriceToHoldingsSheet(sheetName, ticker, livePrice) {
     return { success: false, error: e.message };
   }
 }
+
 
 
 
@@ -18962,6 +20416,9 @@ function getFastSignalList() {
 }
 
 
+
+
+
 ## webapp_03b_signal_overview.gs
 // ============================================================
 // webapp_03b_signal_overview.gs — หน้าภาพรวมสัญญาณ
@@ -19142,6 +20599,8 @@ function countSignalTypes(items) {
 
 
 
+
+
 ## webapp_03c_stock_detail.gs
 // ============================================================
 // webapp_03c_stock_detail.gs — หน้าวิเคราะห์หุ้นรายตัว (ละเอียด)
@@ -19185,6 +20644,8 @@ function _buildFastDetailData(ticker, market, cfg) {
 
   const cur = sig.cur;
   const action = _mapDecisionToSignal(sig.decisionClass); // reuse ตัวเดียวกับหน้าภาพรวมสัญญาณ — กันฉลากไม่ตรงกันข้ามหน้า
+
+
 
   // ── Take Profit price: ไม่มีใน getFastSignal ตรงๆ คำนวณเองจาก eff.takeProfitPct (ไม่แก้ไฟล์เดิม) ──
   const eff = getEffectiveRiskParams(ticker);
@@ -19283,12 +20744,10 @@ function _buildFastDetailData(ticker, market, cfg) {
   feeCard: _attachFeeInsights(
   getStockFeeCard(ticker, market),
   sig.buyPrice, sig.shares,
-  (sig.price - sig.buyPrice) * sig.shares,        // unrealized
-  realized.found ? realized.netPL : 0             // realized
+  (sig.price - sig.buyPrice) * sig.shares,   // unrealized
+  realized.found ? realized.netPL : 0        // realized
 ),
-
-
-    updatedAt: sig.updatedAt
+updatedAt: sig.updatedAt
   };
 }
 
@@ -19391,14 +20850,14 @@ function _buildPortfolioDetailData(ticker, market, cfg) {
     support: _getSupportSafe(ticker), // Swing Low เดียวกับสาย Fast — แต่ตีความเป็น "โซนรอซื้อเพิ่ม" แทน Stop Loss
     resistance: _getResistanceSafe(ticker), // Swing High/ATH — ตีความเป็น "โซนอาจพิจารณาขายทำกำไรบางส่วน"
     recommendation: _buildPortfolioRecommendation(decision, weightInfo, holding),
-  feeCard: _attachFeeInsights(
+feeCard: _attachFeeInsights(
   getStockFeeCard(ticker, market),
   holding.avgCost, holding.sharesRemain,
-  holding.unrealizedPL,                            // unrealized
-  realized.found ? realized.netPL : 0              // realized
+  holding.unrealizedPL,                       // unrealized
+  realized.found ? realized.netPL : 0         // realized
 ),
+updatedAt: Utilities.formatDate(new Date(), 'Asia/Bangkok', 'dd/MM/yyyy HH:mm')
 
-    updatedAt: Utilities.formatDate(new Date(), 'Asia/Bangkok', 'dd/MM/yyyy HH:mm')
   };
 }
 
@@ -19551,7 +21010,8 @@ function getDividendAnnualReport(year) {
 
     if (!sheet || lastRow < START_ROW.DIV) {
       return { success: true, year: yr, us: [], th: [], usTotal: 0, thTotal: 0,
-               usPortTotal: 0, thPortTotal: 0 };
+               usPortTotal: 0, thPortTotal: 0, usCostTotal: 0, thCostTotal: 0,
+               usCostTotalNative: 0, exchangeRate: 0 };
     }
 
     const numRows = lastRow - START_ROW.DIV + 1;
@@ -19576,26 +21036,29 @@ function getDividendAnnualReport(year) {
       else      { thMap[key] = (thMap[key] || 0) + netTHB; thTotal += netTHB; }
     });
 
-    // ── ดึงมูลค่าพอร์ตปัจจุบันมาคำนวณสัดส่วนถือครอง (holding weight)
-    //    และต้นทุนรวม (totalCost) สำหรับคำนวณ Yield on Cost ──
+    // ── แปลง totalCost ของหุ้น US จาก USD → THB ก่อนใช้คำนวณ Yield on Cost ──
+    // (Holdings เก็บ totalCost เป็นสกุลเงินต้นทาง แต่ divAmt เป็น THB เสมอ ต้องแปลงให้ตรงกันก่อนหาร)
+    const exchangeRate = getFxRate();
+
     const usHoldings = getHoldings(SHEETS.US_HOLD);
     const thHoldings = getHoldings(SHEETS.TH_HOLD);
     const usPortTotal = usHoldings.reduce((s, h) => s + h.valueNow, 0);
     const thPortTotal = thHoldings.reduce((s, h) => s + h.valueNow, 0);
-    const usCostTotal = usHoldings.reduce((s, h) => s + h.totalCost, 0);
-    const thCostTotal = thHoldings.reduce((s, h) => s + h.totalCost, 0);
+    const usCostTotalNative = usHoldings.reduce((s, h) => s + h.totalCost, 0);
+    const usCostTotal = usCostTotalNative * exchangeRate; // ← THB แล้ว
+    const thCostTotal = thHoldings.reduce((s, h) => s + h.totalCost, 0); // THB อยู่แล้ว ไม่ต้องคูณ
 
-    const usPortMap = {}, usCostMap = {};
+    const usPortMap = {}, usCostMap = {}; // usCostMap เก็บ { native, thb }
     usHoldings.forEach(h => {
       const k = String(h.ticker).toUpperCase();
       usPortMap[k] = h.valueNow;
-      usCostMap[k] = h.totalCost;
+      usCostMap[k] = { native: h.totalCost, thb: h.totalCost * exchangeRate };
     });
     const thPortMap = {}, thCostMap = {};
     thHoldings.forEach(h => {
       const k = String(h.ticker).toUpperCase();
       thPortMap[k] = h.valueNow;
-      thCostMap[k] = h.totalCost;
+      thCostMap[k] = { native: h.totalCost, thb: h.totalCost }; // TH: native = thb เท่ากันอยู่แล้ว
     });
 
     function buildList(map, total, portMap, portTotal, costMap) {
@@ -19604,18 +21067,19 @@ function getDividendAnnualReport(year) {
         const divPct = total > 0 ? (divAmt / total) * 100 : 0;
         const holdVal = portMap[t] || 0;
         const holdPct = portTotal > 0 ? (holdVal / portTotal) * 100 : 0;
-        const costVal = costMap[t] || 0;
-        const yieldOnCost = costVal > 0 ? (divAmt / costVal) * 100 : 0;
+        const costObj = costMap[t] || { native: 0, thb: 0 };
+        const yieldOnCost = costObj.thb > 0 ? (divAmt / costObj.thb) * 100 : 0; // ← หารด้วย THB เสมอ ถูกต้องแล้ว
         return {
           ticker: t,
           divAmt: divAmt,
           divPct: divPct,
           holdVal: holdVal,
           holdPct: holdPct,
-          diffPct: divPct - holdPct,       // + = จ่ายปันผลเกินสัดส่วนที่ถือ, - = ต่ำกว่า
+          diffPct: divPct - holdPct,
           inPortfolio: holdVal > 0,
-          costVal: costVal,
-          yieldOnCost: yieldOnCost          // ปันผล ÷ ต้นทุนที่ซื้อของหุ้นตัวนี้
+          costVal: costObj.thb,          // THB — ใช้คำนวณ/legacy
+          costValNative: costObj.native, // สกุลเงินต้นทาง — ใช้แสดงผล
+          yieldOnCost: yieldOnCost
         };
       }).sort((a, b) => b.divAmt - a.divAmt);
     }
@@ -19629,14 +21093,16 @@ function getDividendAnnualReport(year) {
       thTotal: thTotal,
       usPortTotal: usPortTotal,
       thPortTotal: thPortTotal,
-      usCostTotal: usCostTotal,           // ต้นทุนรวมหุ้นสหรัฐที่ถืออยู่ปัจจุบัน
-      thCostTotal: thCostTotal            // ต้นทุนรวมหุ้นไทยที่ถืออยู่ปัจจุบัน
+      usCostTotal: usCostTotal,             // THB
+      thCostTotal: thCostTotal,             // THB
+      usCostTotalNative: usCostTotalNative, // USD ดิบ (เผื่อ frontend อยากโชว์รวมด้วย)
+      exchangeRate: exchangeRate
     };
   } catch (e) {
     logError('getDividendAnnualReport', e);
     return { success: false, error: e.message, year: yr, us: [], th: [],
              usTotal: 0, thTotal: 0, usPortTotal: 0, thPortTotal: 0,
-             usCostTotal: 0, thCostTotal: 0 };
+             usCostTotal: 0, thCostTotal: 0, usCostTotalNative: 0, exchangeRate: 0 };
   }
 }
 
@@ -19712,6 +21178,74 @@ function getDividendYears() {
   }
 }
 
+/** ประวัติปันผลของหุ้นตัวเดียว แยกตามปี — ใช้ตอนแตะการ์ดในหน้ารายงานปันผล */
+function getDividendHistoryForTicker(ticker, market) {
+  try {
+    ticker = String(ticker || '').trim().toUpperCase();
+    const sheet = getSheet(SHEETS.DIV);
+    const lastRow = sheet ? sheet.getLastRow() : 0;
+    if (!sheet || lastRow < START_ROW.DIV) {
+      return { success: true, ticker, market, years: [], totalNetTHB: 0, totalPayments: 0 };
+    }
+
+    const numRows = lastRow - START_ROW.DIV + 1;
+    const rows = sheet.getRange(START_ROW.DIV, 1, numRows, 17).getValues();
+
+    const isTargetUS = market === 'US';
+    const yearMap = {}; // { year: { totalNetTHB, totalGrossNative, payments: [] } }
+    let totalNetTHB = 0, totalPayments = 0;
+
+    rows.forEach(row => {
+      const rowTicker = String(row[DIV_COL.TICKER - 1] || '').trim().toUpperCase();
+      const payDate = row[DIV_COL.PAY_DATE - 1];
+      if (rowTicker !== ticker || !(payDate instanceof Date)) return;
+
+      const marketRaw = String(row[DIV_COL.MARKET - 1] || '').toUpperCase();
+      const rowIsUS = marketRaw.indexOf('US') !== -1 || marketRaw.indexOf('สหรัฐ') !== -1 || marketRaw.indexOf('USD') !== -1;
+      if (rowIsUS !== isTargetUS) return; // กันชื่อหุ้นซ้ำข้ามตลาด
+
+      const yr = payDate.getFullYear();
+      if (!yearMap[yr]) yearMap[yr] = { year: yr, totalNetTHB: 0, totalGrossNative: 0, payments: [] };
+
+      const netThb = Number(row[DIV_COL.NET_THB - 1]) || 0;
+      const grossNative = Number(row[DIV_COL.AMT - 1]) || 0;
+      const perShare = Number(row[DIV_COL.PER_SHARE - 1]) || 0;
+      const shares = Number(row[DIV_COL.SHARES - 1]) || 0;
+      const currency = String(row[DIV_COL.CURRENCY - 1] || '');
+      const round = String(row[DIV_COL.ROUND - 1] || '');
+      const xdDate = row[DIV_COL.XD_DATE - 1];
+
+      yearMap[yr].totalNetTHB += netThb;
+      yearMap[yr].totalGrossNative += grossNative;
+      yearMap[yr].payments.push({
+        payDate: Utilities.formatDate(payDate, 'Asia/Bangkok', 'dd/MM/yyyy'),
+        xdDate: (xdDate instanceof Date) ? Utilities.formatDate(xdDate, 'Asia/Bangkok', 'dd/MM/yyyy') : '',
+        round, perShare, shares, grossNative, currency, netThb
+      });
+
+      totalNetTHB += netThb;
+      totalPayments++;
+    });
+
+    const years = Object.values(yearMap)
+      .sort((a, b) => b.year - a.year)
+      .map(y => ({ ...y, payments: y.payments.sort((a, b) => new Date(b.payDate.split('/').reverse().join('-')) - new Date(a.payDate.split('/').reverse().join('-'))) }));
+
+    // YoY growth เทียบปีก่อนหน้า
+    years.forEach((y, i) => {
+      const prev = years[i + 1]; // เรียงใหม่ล่าสุดก่อน ตัวถัดไปคือปีก่อนหน้า
+      y.yoyPct = prev && prev.totalNetTHB > 0 ? ((y.totalNetTHB - prev.totalNetTHB) / prev.totalNetTHB) * 100 : null;
+    });
+
+    return { success: true, ticker, market, years, totalNetTHB, totalPayments,
+      avgPerYear: years.length > 0 ? totalNetTHB / years.length : 0 };
+  } catch (e) {
+    logError('getDividendHistoryForTicker', e);
+    return { success: false, error: e.message };
+  }
+}
+
+
 
 
 ## webapp_05_settings.gs
@@ -19726,6 +21260,7 @@ function getDividendYears() {
 //   (ข้าง Debug) แล้วกด ▶ Run เพื่อสร้างชีต Settings + StockMode
 // ============================================================
 
+
 const SETTINGS_SHEET = {
   SHEET:               'Settings',
   CUT_STOP:            'E4',  // Cut Stop % (ค่าติดลบ)
@@ -19739,18 +21274,13 @@ const SETTINGS_SHEET = {
 
 // ── คอลัมน์ชีต StockMode (1-based) — 1 แถวต่อ 1 ticker ──
 const STOCK_MODE_COL = {
-  TICKER:                 2,  // B
-  MARKET:                 3,  // C  สหรัฐ / ไทย
-  ASSET_TYPE:             4,  // D  หุ้น / ETF / กองทุน
-  MODE:                   5,  // E  Fast / Portfolio
-  TREND_GROUP:            6,  // F  Growth / Value / Defensive / Dividend
-  TARGET_WEIGHT_AUTO:     7,  // G  คำนวณอัตโนมัติ (เฟส Analysis_Portfolio จะเติมให้ — เว้นว่างไว้ก่อน)
-  TARGET_WEIGHT_OVERRIDE: 8,  // H  กรอกเอง (ถ้าไม่กรอกใช้ Auto)
-  CUT_STOP_ATR_X:         9,  // I  override ตัวคูณ ATR สำหรับ Cut Stop เฉพาะ ticker นี้ (null = ใช้ multiplier เดิมจาก ATR_Portfolio)
-  TRAIL_STOP_ATR_X:      10,  // J  override ตัวคูณ ATR สำหรับ Trailing Stop
-  TAKE_PROFIT_PCT:       11,  // K  override % Take Profit เฉพาะตัว
-  NOTE:                  12   // L
+  TICKER: 2, MARKET: 3, ASSET_TYPE: 4, MODE: 5, TREND_GROUP: 6,
+  TARGET_WEIGHT_AUTO: 7, TARGET_WEIGHT_OVERRIDE: 8,
+  CUT_STOP_ATR_X: 9, TRAIL_STOP_ATR_X: 10, TAKE_PROFIT_PCT: 11, NOTE: 12,
+  PORTFOLIO_TRAIL_START: 13, PORTFOLIO_TRAIL_ATR_X: 14,
+  MIN_PROFIT_PROTECT: 15, TRAIL_TRIGGER_MODE: 16, TRAIL_RESET_PCT: 17
 };
+
 const STOCK_MODE_SHEET_NAME = 'StockMode';
 const STOCK_MODE_START_ROW  = 7; // แถวแรกที่กรอกข้อมูลหุ้น (header อยู่แถว 6)
 
@@ -19885,24 +21415,29 @@ function getStockModeMap() {
     if (lastRow < STOCK_MODE_START_ROW) return map;
 
     const numRows = lastRow - STOCK_MODE_START_ROW + 1;
-    const rows = sheet.getRange(STOCK_MODE_START_ROW, STOCK_MODE_COL.TICKER, numRows, 11).getValues();
+   const rows = sheet.getRange(STOCK_MODE_START_ROW, STOCK_MODE_COL.TICKER, numRows, 16).getValues();
 
-    rows.forEach(row => {
-      const ticker = String(row[0] || '').trim().toUpperCase();
-      if (!ticker) return;
-      map[ticker] = {
-        market:                row[1] || '',
-        assetType:              row[2] || '',
-        mode:                   row[3] || 'Portfolio',
-        trendGroup:             row[4] || '',
-        targetWeightAuto:       row[5] === '' ? null : Number(row[5]),
-        targetWeightOverride:   row[6] === '' ? null : Number(row[6]),
-        cutStopAtrX:            row[7] === '' ? null : Number(row[7]),
-        trailStopAtrX:          row[8] === '' ? null : Number(row[8]),
-        takeProfitPctOverride:  row[9] === '' ? null : Number(row[9]),
-        note:                   row[10] || ''
-      };
-    });
+rows.forEach(row => {
+  const ticker = String(row[0] || '').trim().toUpperCase();
+  if (!ticker) return;
+  map[ticker] = {
+    market: row[1] || '', assetType: row[2] || '', mode: row[3] || 'Portfolio',
+    trendGroup: row[4] || '',
+    targetWeightAuto: row[5] === '' ? null : Number(row[5]),
+    targetWeightOverride: row[6] === '' ? null : Number(row[6]),
+    cutStopAtrX: row[7] === '' ? null : Number(row[7]),
+    trailStopAtrX: row[8] === '' ? null : Number(row[8]),
+    takeProfitPctOverride: row[9] === '' ? null : Number(row[9]),
+    note: row[10] || '',
+    portfolioTrailStartOverride: row[11] === '' ? null : Number(row[11]),
+    portfolioTrailAtrXOverride:  row[12] === '' ? null : Number(row[12]),
+    minProfitProtectOverride: row[13] === '' ? null : Number(row[13]),
+    trailTriggerModeOverride: row[14] || null,
+    trailResetPctOverride: row[15] === '' ? null : Number(row[15])
+  };
+});
+
+
   } catch (e) {
     logError('getStockModeMap', e);
   }
@@ -19941,7 +21476,14 @@ function getEffectiveRiskParams(ticker) {
       : defaults.takeProfitMinPct,
 
     concentrationWarnPct: defaults.concentrationWarnPct,
-    drawdownWarnPct: defaults.drawdownWarnPct
+    drawdownWarnPct: defaults.drawdownWarnPct,
+
+portfolioTrailStartProfitPct: cfg.portfolioTrailStartOverride ?? 10,
+portfolioTrailAtrX: cfg.portfolioTrailAtrXOverride ?? 3.5,
+minProfitProtectPct: cfg.minProfitProtectOverride ?? 1,
+trailTriggerMode: cfg.trailTriggerModeOverride ?? 'lastClose',
+trailResetPct: cfg.trailResetPctOverride ?? 0.5
+
   };
 }
 
@@ -20011,9 +21553,6 @@ function getSparklineData() {
     return {};
   }
 }
-
-
-
 
 
 ## webapp_07_watchlist.gs
@@ -20537,9 +22076,6 @@ function updateWatchlistPlan(ticker, market, targetPrice, supportPrice) {
     return { success: false, error: e.message };
   }
 }
-
-
-
 
 
 ## webapp_08_rebalance.gs
@@ -21082,7 +22618,7 @@ function _readBuyPlanConfig(ticker, market) {
   if (lastRow < BUY_PLAN_SHEET.START_ROW) return null;
 
   const numRows = lastRow - BUY_PLAN_SHEET.START_ROW + 1;
-  const rows = sheet.getRange(BUY_PLAN_SHEET.START_ROW, 1, numRows, 14).getValues();
+  const rows = sheet.getRange(BUY_PLAN_SHEET.START_ROW, 1, numRows, 15).getValues(); // ← 14→15
 
   for (let i = 0; i < rows.length; i++) {
     const rTicker = String(rows[i][0] || '').trim().toUpperCase();
@@ -21100,12 +22636,14 @@ function _readBuyPlanConfig(ticker, market) {
         dcaFreqDays: parseFloat(rows[i][10]) || null,
         dcaAmount: parseFloat(rows[i][11]) || null,
         startDate: rows[i][12] instanceof Date ? rows[i][12] : null,
-        note: rows[i][13] || ''
+        note: rows[i][13] || '',
+        referencePrice: parseFloat(rows[i][14]) || null // ← ใหม่
       };
     }
   }
   return null;
 }
+
 
 // ── คำนวณสถานะแผน Price-based: จับคู่ไม้ซื้อจริงกับแต่ละ leg ตาม "ราคา trigger จริง"
 //    ไม่ใช่แค่นับจำนวนไม้ที่ซื้อ — เพราะถ้าคนซื้อไม้พิเศษนอกแผน การนับแบบเดิมจะรายงาน
@@ -21113,35 +22651,32 @@ function _readBuyPlanConfig(ticker, market) {
 //    วิธีนี้: leg จะถือว่า "done" ก็ต่อเมื่อมีไม้ซื้อจริงที่ราคา ≤ targetPrice ของ leg นั้น
 //    และไม้นั้นต้องเกิดขึ้น "หลัง" ไม้ที่จับคู่กับ leg ก่อนหน้าแล้วเท่านั้น (รักษาลำดับเวลา) ──
 function buildPriceBasedPlanStatus(cfg, buys, currentPrice, holdingInfo, fxRateForDisplay, market) {
-  const firstEntryPrice = buys.length ? buys[0].price : null;
-  const isWholeShareOnly = (market === 'TH'); // หุ้นไทยซื้อเป็นหุ้นเต็มหน่วยเท่านั้น
+  const isWholeShareOnly = (market === 'TH');
+  const firstEntryPrice = buys.length ? buys[0].price : cfg.referencePrice; // ← fallback ใหม่
+  const usingReferencePrice = !buys.length && !!cfg.referencePrice;
 
-  let searchFromIdx = 1; // leg แรกใช้ buys[0] เป็น entry เสมอ (ไม้แรกที่ตั้งแผน)
+  let searchFromIdx = 0;
   const steps = cfg.legs.map((leg, i) => {
-    const targetPrice = (firstEntryPrice && leg.triggerPct)
-      ? firstEntryPrice * (1 - Math.abs(leg.triggerPct) / 100)
-      : null;
-
     if (i === 0) {
-      // leg แรก = ไม้แรกที่ซื้อจริงเสมอ (ถ้ามีประวัติซื้ออย่างน้อย 1 ไม้)
       const executed = buys.length > 0;
-      return {
+      const result = {
         legNumber: 1, pct: leg.pct, triggerPct: leg.triggerPct, targetPrice: firstEntryPrice,
-        status: executed ? 'done' : 'pending',
+        status: executed ? 'done' : 'not_yet', // ← เปลี่ยนจาก 'pending' → เข้า flow canBuyNow เหมือนไม้อื่น
         executedPrice: executed ? buys[0].price : null,
         executedShares: executed && !isNaN(buys[0].shares) ? buys[0].shares : null,
         executedDate: executed ? Utilities.formatDate(new Date(buys[0].date), 'Asia/Bangkok', 'dd/MM/yyyy') : null,
-        matchNote: null
+        matchNote: usingReferencePrice ? 'อ้างอิงราคา ณ ตอนสร้างแผน (ยังไม่เคยถือ)' : null
       };
+      if (executed) searchFromIdx = 1;
+      return result;
     }
 
-    // leg ที่ 2 เป็นต้นไป: หาไม้ซื้อที่เกิดหลัง searchFromIdx และราคา ≤ targetPrice
-    if (targetPrice === null) {
+    if (firstEntryPrice === null) {
       return { legNumber: i + 1, pct: leg.pct, triggerPct: leg.triggerPct, targetPrice: null,
-        status: 'pending', executedPrice: null, executedShares: null, executedDate: null,
-        matchNote: 'ไม่มี trigger % กำหนดไว้ ระบุแผนไม่ครบ' };
+        status: 'pending', executedPrice: null, executedShares: null, executedDate: null, matchNote: 'ไม่มีราคาอ้างอิง' };
     }
 
+    const targetPrice = firstEntryPrice * (1 - Math.abs(leg.triggerPct) / 100);
     let matchedIdx = -1;
     for (let b = searchFromIdx; b < buys.length; b++) {
       if (buys[b].price <= targetPrice) { matchedIdx = b; break; }
@@ -21157,72 +22692,51 @@ function buildPriceBasedPlanStatus(cfg, buys, currentPrice, holdingInfo, fxRateF
         matchNote: null
       };
     }
-
-    // ยังไม่เจอไม้ที่ตรงเงื่อนไข — จะถูกจัดสถานะ next/pending อีกทีหลัง map เสร็จ (ดูด้านล่าง)
-    return {
-      legNumber: i + 1, pct: leg.pct, triggerPct: leg.triggerPct, targetPrice,
-      status: 'not_yet', executedPrice: null, executedShares: null, executedDate: null, matchNote: null
-    };
+    return { legNumber: i + 1, pct: leg.pct, triggerPct: leg.triggerPct, targetPrice,
+      status: 'not_yet', executedPrice: null, executedShares: null, executedDate: null, matchNote: null };
   });
 
-  // ── กำหนด leg แรกที่ยังไม่ done ให้เป็น "next" (ใกล้คิวถัดไป) ที่เหลือเป็น "pending" ──
   let nextAssigned = false;
   steps.forEach(s => {
-    if (s.status === 'not_yet') {
-      s.status = nextAssigned ? 'pending' : 'next';
-      nextAssigned = true;
-    }
+    if (s.status === 'not_yet') { s.status = nextAssigned ? 'pending' : 'next'; nextAssigned = true; }
   });
 
-  // ── คำนวณระยะห่างจากราคาปัจจุบันถึงจุดซื้อ — เฉพาะ step ที่ยังไม่ done ──
-  // distanceAmount > 0 = ราคายังต้องลงอีกเท่านี้ถึงจะถึงจุดซื้อ / ≤ 0 = ถึงจุดซื้อแล้ว (canBuyNow)
   if (currentPrice) {
     steps.forEach(s => {
       if (s.status === 'done' || s.targetPrice === null) return;
       s.distanceAmount = currentPrice - s.targetPrice;
       s.distancePct = (s.distanceAmount / currentPrice) * 100;
-      s.canBuyNow = currentPrice <= s.targetPrice;
+      s.canBuyNow = currentPrice <= s.targetPrice; // ← ตอนนี้ครอบคลุมไม้ 1 ด้วย
     });
   }
 
-  // ── เงินที่ใช้ต่อไม้ (จริงถ้า done / ประมาณการถ้ายังไม่ done) + THB equivalent (หุ้นสหรัฐ) ──
   steps.forEach(s => {
     if (s.status === 'done') {
-      // ── ไม้ที่ซื้อไปแล้ว: ใช้ตัวเลขจริงจาก transaction log (แม่นกว่าประมาณการ) ──
-      if (s.executedShares !== null) {
-        s.actualBudgetSpent = s.executedPrice * s.executedShares;
-      } else {
-        s.actualBudgetSpent = cfg.budget * (s.pct / 100); // fallback ถ้าอ่านจำนวนหุ้นจาก log ไม่ได้
-      }
+      s.actualBudgetSpent = s.executedShares !== null ? s.executedPrice * s.executedShares : cfg.budget * (s.pct / 100);
       s.budgetTHBEquivalent = (market === 'US' && fxRateForDisplay) ? s.actualBudgetSpent * fxRateForDisplay : null;
     } else if (s.targetPrice !== null) {
-      // ── ไม้ที่ยังไม่ซื้อ: ประมาณการจาก % งบที่ตั้งแผนไว้ ──
       const budgetForLeg = cfg.budget * (s.pct / 100);
-      const refPrice = s.targetPrice; // ใช้ราคาเป้าหมายของ leg นี้เป็นราคาอ้างอิงคำนวณจำนวนหุ้น
-      let estimatedShares = budgetForLeg / refPrice;
+      let estimatedShares = budgetForLeg / s.targetPrice;
       estimatedShares = isWholeShareOnly ? Math.floor(estimatedShares) : Math.round(estimatedShares * 10000) / 10000;
-
       s.budgetForLeg = budgetForLeg;
       s.estimatedShares = estimatedShares;
       s.budgetTHBEquivalent = (market === 'US' && fxRateForDisplay) ? budgetForLeg * fxRateForDisplay : null;
 
-      // ── พรีวิวต้นทุนเฉลี่ยใหม่ ถ้าซื้อไม้นี้ที่ราคาเป้าหมาย ──
       const curShares = holdingInfo ? (parseFloat(holdingInfo.sharesRemain) || 0) : 0;
       const curTotalCost = holdingInfo ? (parseFloat(holdingInfo.totalCost) || 0) : 0;
       const curAvgCost = holdingInfo ? (parseFloat(holdingInfo.avgCost) || null) : null;
-
-      const newTotalCost = curTotalCost + (refPrice * estimatedShares);
+      const newTotalCost = curTotalCost + (s.targetPrice * estimatedShares);
       const newTotalShares = curShares + estimatedShares;
-      const newAvgCost = newTotalShares > 0 ? newTotalCost / newTotalShares : refPrice;
+      const newAvgCost = newTotalShares > 0 ? newTotalCost / newTotalShares : s.targetPrice;
 
       s.curAvgCost = curAvgCost;
       s.newAvgCost = newAvgCost;
-      s.avgCostChangeAmount = (curAvgCost !== null) ? (newAvgCost - curAvgCost) : null; // null = ยังไม่เคยถือ ไม่มี "เดิม" ให้เทียบ
-      s.avgCostChangePct = (curAvgCost) ? ((newAvgCost - curAvgCost) / curAvgCost) * 100 : null;
+      s.avgCostChangeAmount = (curAvgCost !== null) ? (newAvgCost - curAvgCost) : null;
+      s.avgCostChangePct = curAvgCost ? ((newAvgCost - curAvgCost) / curAvgCost) * 100 : null;
     }
   });
 
-  return { budget: cfg.budget, firstEntryPrice, steps, note: cfg.note };
+  return { budget: cfg.budget, firstEntryPrice, usingReferencePrice, steps, note: cfg.note };
 }
 
 // ── คำนวณสถานะแผน Time-based (DCA): รอบถัดไปคือเมื่อไหร่ ──
@@ -21485,11 +22999,6 @@ function getSellableQty(ticker, assetType) {
     return { success: false, error: e.message, qty: 0, found: false };
   }
 }
-
-
-
-
-
 
 
 
@@ -22484,6 +23993,8 @@ function getDailyCloseHistory(ticker) {
 
 
 
+
+
 ## webapp_10_stock_lifecycle.gs
 // ============================================================
 // webapp_10_stock_lifecycle.gs — รวมเฟส 1/2/3 เป็นไฟล์เดียว
@@ -22508,7 +24019,11 @@ const SM_SHEET_NAME = 'StockMode';
 const SM_START_ROW   = 7;   // header แถว 6 → ข้อมูลเริ่มแถว 7
 const SM_COL = { TICKER: 2, MARKET: 3, ASSET_TYPE: 4, MODE: 5, TREND_GROUP: 6,
                   TARGET_WEIGHT_OVERRIDE: 8, CUT_STOP: 9, TRAILING_STOP: 10,
-                  TAKE_PROFIT: 11, NOTE: 12 };
+                  TAKE_PROFIT: 11, NOTE: 12,
+                  PORTFOLIO_TRAIL_START: 13, PORTFOLIO_TRAIL_ATR_X: 14,
+                  MIN_PROFIT_PROTECT: 15, TRAIL_TRIGGER_MODE: 16, TRAIL_RESET_PCT: 17 };
+
+
 
 // Realized P&L: config.gs ไม่มี object คอลัมน์แยก แต่ ticker อยู่ col B (2)
 // เหมือน HOLD_COL.TICKER (โครงสร้างเดียวกับ Holdings)
@@ -22687,15 +24202,21 @@ function saveNewStockMode(data) {
     sheet.getRange(row, SM_COL.MODE).setValue(data.mode);
     sheet.getRange(row, SM_COL.TREND_GROUP).setValue(data.trendGroup);
 
-    if (data.targetWeightOverride !== '' && data.targetWeightOverride != null)
-      sheet.getRange(row, SM_COL.TARGET_WEIGHT_OVERRIDE).setValue(parseFloat(data.targetWeightOverride));
-    if (data.cutStopOverride !== '' && data.cutStopOverride != null)
-      sheet.getRange(row, SM_COL.CUT_STOP).setValue(parseFloat(data.cutStopOverride));
-    if (data.trailingStopOverride !== '' && data.trailingStopOverride != null)
-      sheet.getRange(row, SM_COL.TRAILING_STOP).setValue(parseFloat(data.trailingStopOverride));
-    if (data.takeProfitOverride !== '' && data.takeProfitOverride != null)
-      sheet.getRange(row, SM_COL.TAKE_PROFIT).setValue(parseFloat(data.takeProfitOverride) / 100);
-    if (data.note) sheet.getRange(row, SM_COL.NOTE).setValue(data.note);
+   if (data.targetWeightOverride !== '' && data.targetWeightOverride != null)
+  sheet.getRange(row, SM_COL.TARGET_WEIGHT_OVERRIDE).setValue(parseFloat(data.targetWeightOverride));
+if (data.cutStopOverride !== '' && data.cutStopOverride != null)
+  sheet.getRange(row, SM_COL.CUT_STOP).setValue(parseFloat(data.cutStopOverride));
+if (data.trailingStopOverride !== '' && data.trailingStopOverride != null)
+  sheet.getRange(row, SM_COL.TRAILING_STOP).setValue(parseFloat(data.trailingStopOverride));
+if (data.takeProfitOverride !== '' && data.takeProfitOverride != null)
+  sheet.getRange(row, SM_COL.TAKE_PROFIT).setValue(parseFloat(data.takeProfitOverride) / 100);
+if (data.portfolioTrailStartOverride !== '' && data.portfolioTrailStartOverride != null)
+  sheet.getRange(row, SM_COL.PORTFOLIO_TRAIL_START).setValue(parseFloat(data.portfolioTrailStartOverride));
+if (data.portfolioTrailAtrOverride !== '' && data.portfolioTrailAtrOverride != null)
+  sheet.getRange(row, SM_COL.PORTFOLIO_TRAIL_ATR_X).setValue(parseFloat(data.portfolioTrailAtrOverride));
+
+if (data.note) sheet.getRange(row, SM_COL.NOTE).setValue(data.note);
+
 
     return { success: true, row: row };
   } catch (e) {
@@ -22740,6 +24261,19 @@ function updateStockMode(data) {
     sheet.getRange(targetRow, SM_COL.TAKE_PROFIT)
       .setValue(data.takeProfitOverride !== '' && data.takeProfitOverride != null ? parseFloat(data.takeProfitOverride) / 100 : '');
     sheet.getRange(targetRow, SM_COL.NOTE).setValue(data.note || '');
+
+ sheet.getRange(targetRow, SM_COL.PORTFOLIO_TRAIL_START)
+  .setValue(data.portfolioTrailStartOverride !== '' && data.portfolioTrailStartOverride != null ? parseFloat(data.portfolioTrailStartOverride) : '');
+sheet.getRange(targetRow, SM_COL.PORTFOLIO_TRAIL_ATR_X)
+  .setValue(data.portfolioTrailAtrOverride !== '' && data.portfolioTrailAtrOverride != null ? parseFloat(data.portfolioTrailAtrOverride) : '');
+sheet.getRange(targetRow, SM_COL.MIN_PROFIT_PROTECT)
+  .setValue(data.minProfitProtectOverride !== '' && data.minProfitProtectOverride != null ? parseFloat(data.minProfitProtectOverride) : '');
+sheet.getRange(targetRow, SM_COL.TRAIL_TRIGGER_MODE)
+  .setValue(data.trailTriggerModeOverride || '');
+sheet.getRange(targetRow, SM_COL.TRAIL_RESET_PCT)
+  .setValue(data.trailResetPctOverride !== '' && data.trailResetPctOverride != null ? parseFloat(data.trailResetPctOverride) : '');
+
+
 
     return { success: true, row: targetRow };
   } catch (e) {
@@ -22838,7 +24372,6 @@ function _cleanupATRPortfolio(sheetName, startRow) {
   }
   return cleared;
 }
-
 
 
 
@@ -23259,6 +24792,8 @@ function _wlUpdateHighestCloseSingle(extSS, ticker, highestClose, highestDate) {
 }
 
 
+
+
 ## webapp_14_fee_analysis.gs
 // ============================================================
 // webapp_14_fee_analysis.gs — เมนู 💸 Fee Analysis (submenu ใต้ วิเคราะห์)
@@ -23426,13 +24961,13 @@ function _readFeeRows(sheetName, market) {
 
  rows.push({
   ticker: ticker, market: market, type: type, shares: shares, dateStr: dateStr,
-  price: parseFloat(r[5]) || 0,                       // ← เพิ่ม: col F ราคาต่อหุ้น
+  price: parseFloat(r[5]) || 0,                       // col F ราคาต่อหุ้น
   commissionTHB: commission * exchangeRate,
   otherTHB: other * exchangeRate,
   vatTHB: vat * exchangeRate,
   feeTHB: (commission + other + vat) * exchangeRate,
-  feeNative: commission + other + vat,
-  tradeValueNative: (parseFloat(r[5]) || 0) * shares   // ← เพิ่ม: มูลค่ารายการ (สกุลเงินต้นทาง)
+  feeNative: commission + other + vat,                 // USD สำหรับ US, THB สำหรับ TH
+  tradeValueNative: (parseFloat(r[5]) || 0) * shares    // มูลค่ารายการ (สกุลเงินต้นทาง)
 });
 
 
@@ -23473,16 +25008,15 @@ function getStockFeeCard(ticker, market) {
   try {
     const baseTicker = String(ticker || '').trim().toUpperCase();
     const sheetName = market === 'TH' ? SHEETS.TH_TRANS : SHEETS.US_TRANS;
-    const allRows = _readFeeRows(sheetName, market); // ← เปลี่ยนจาก rows ตรงๆ เป็นทั้งตลาดก่อน
+    const allRows = _readFeeRows(sheetName, market); // ทั้งตลาด — ใช้ fallback sell-fee rate ด้วย
     const rows = allRows.filter(r => _stripCycleSuffix(r.ticker).toUpperCase() === baseTicker);
 
-    //  .filter(r => _stripCycleSuffix(r.ticker).toUpperCase() === baseTicker);
-
     if (!rows.length) {
-      return { success: true, hasData: false, cycles: 0,totalBuyShares: 0,avgFeePerOrderNative: 0, avgFeePerCycleNative: 0,
+      return { success: true, hasData: false, cycles: 0,
         currentCycleBuyFeeTHB: 0, totalBuyFeeTHB: 0, totalSellFeeTHB: 0, totalFeeTHB: 0,
         currentCycleBuyFeeNative: 0, totalBuyFeeNative: 0, totalSellFeeNative: 0, totalFeeNative: 0,
-        avgFeePerOrderTHB: 0, avgFeePerCycleTHB: 0, buyCount: 0, sellCount: 0, overTrading: null };
+        avgFeePerOrderTHB: 0, avgFeePerCycleTHB: 0, avgFeePerOrderNative: 0, avgFeePerCycleNative: 0,
+        buyCount: 0, sellCount: 0, overTrading: null, totalBuyShares: 0 };
     }
 
     const cycleOrder = r => { const m = String(r.ticker).match(/_C(\d+)$/i); return m ? parseInt(m[1],10) : 0; };
@@ -23490,13 +25024,12 @@ function getStockFeeCard(ticker, market) {
     const latestCycleTicker = rows.reduce((a,b) => cycleOrder(b) > cycleOrder(a) ? b : a, rows[0]).ticker.toUpperCase();
 
     let totalBuy=0, totalSell=0, buyCount=0, sellCount=0, currentCycleBuy=0;
-    let totalBuyN=0, totalSellN=0, currentCycleBuyN=0;
-    let totalBuyShares = 0;
+    let totalBuyN=0, totalSellN=0, currentCycleBuyN=0, totalBuyShares=0;
     rows.forEach(r => {
       if (r.type === 'ซื้อ') {
-  totalBuy += r.feeTHB; totalBuyN += r.feeNative; totalBuyShares += r.shares; buyCount++;
-      if (r.ticker.toUpperCase() === latestCycleTicker) { currentCycleBuy += r.feeTHB; currentCycleBuyN += r.feeNative; }
-     }else if (r.type === 'ขาย') {
+        totalBuy += r.feeTHB; totalBuyN += r.feeNative; totalBuyShares += r.shares; buyCount++;
+        if (r.ticker.toUpperCase() === latestCycleTicker) { currentCycleBuy += r.feeTHB; currentCycleBuyN += r.feeNative; }
+      } else if (r.type === 'ขาย') {
         totalSell += r.feeTHB; totalSellN += r.feeNative; sellCount++;
       }
     });
@@ -23505,11 +25038,10 @@ function getStockFeeCard(ticker, market) {
     const totalFeeN = totalBuyN + totalSellN;
     const totalOrders = buyCount + sellCount;
 
-    const ORDER_THRESHOLD = 15; // ใช้ threshold เดียวกับหน้า Fee Analysis ภาพรวม
+    const ORDER_THRESHOLD = 15;
     const overTrading = totalOrders >= ORDER_THRESHOLD ? (totalOrders >= ORDER_THRESHOLD*2 ? 'high' : 'warn') : null;
 
     const sellFeeEst = _estimateSellFeeRate(rows, allRows);
-
 
     return {
       success: true, hasData: true, cycles: cycles.length,
@@ -23523,20 +25055,19 @@ function getStockFeeCard(ticker, market) {
       totalFeeNative: Math.round(totalFeeN*100)/100,
       avgFeePerOrderTHB: totalOrders>0 ? Math.round((totalFee/totalOrders)*100)/100 : 0,
       avgFeePerCycleTHB: cycles.length>0 ? Math.round((totalFee/cycles.length)*100)/100 : 0,
-      sellFeeRatePct: sellFeeEst ? Math.round(sellFeeEst.rate * 10000) / 100 : null,
-      sellFeeRateSource: sellFeeEst ? sellFeeEst.source : null,
-      totalBuyShares: Math.round(totalBuyShares * 10000) / 10000,
       avgFeePerOrderNative: totalOrders > 0 ? Math.round((totalFeeN / totalOrders) * 100) / 100 : 0,
       avgFeePerCycleNative: cycles.length > 0 ? Math.round((totalFeeN / cycles.length) * 100) / 100 : 0,
-      buyCount, sellCount, overTrading
-
-
+      buyCount, sellCount, overTrading,
+      totalBuyShares: Math.round(totalBuyShares * 10000) / 10000,
+      sellFeeRatePct: sellFeeEst ? Math.round(sellFeeEst.rate * 10000) / 100 : null,
+      sellFeeRateSource: sellFeeEst ? sellFeeEst.source : null
     };
   } catch (e) {
     logError('getStockFeeCard', e);
     return { success: false, error: e.message };
   }
 }
+
 
 /** เติม breakeven price + fee vs profit % — เรียกหลัง getStockFeeCard() เมื่อรู้ต้นทุน/กำไรแล้ว */
 function _attachFeeInsights(feeCard, avgCostNative, sharesRemain, unrealizedProfitNative, realizedProfitNative) {
@@ -23557,10 +25088,10 @@ function _attachFeeInsights(feeCard, avgCostNative, sharesRemain, unrealizedProf
     feeCard.breakevenPrice = null;
   }
 
-  // ── แบ่ง fee ซื้อตามสัดส่วนหุ้นที่ขายไปแล้ว vs ที่ยังถืออยู่ ──
+  // แบ่ง fee ซื้อตามสัดส่วนหุ้นที่ขายไปแล้ว vs ที่ยังถืออยู่
   const buyFeePerShare = feeCard.totalBuyShares > 0 ? feeCard.totalBuyFeeNative / feeCard.totalBuyShares : 0;
   const unrealizedFeeNative = buyFeePerShare * (sharesRemain || 0);
-  const realizedFeeNative = feeCard.totalFeeNative - unrealizedFeeNative; // fee ซื้อส่วนที่ขายแล้ว + fee ขายทั้งหมด
+  const realizedFeeNative = feeCard.totalFeeNative - unrealizedFeeNative;
 
   feeCard.unrealizedFeeNative = Math.round(unrealizedFeeNative * 100) / 100;
   feeCard.realizedFeeNative = Math.round(realizedFeeNative * 100) / 100;
@@ -23590,14 +25121,15 @@ function _estimateSellFeeRate(stockRows, marketRows) {
     const val = marketSells.reduce((s,r) => s + r.tradeValueNative, 0);
     return val > 0 ? { rate: fee/val, source: 'ค่าเฉลี่ยทั้งตลาด (' + marketSells.length + ' ครั้ง)' } : null;
   }
-  return null; // ไม่มีประวัติขายเลยทั้งระบบ
+  return null;
 }
 
 
 
 
 
-## cleanup_daily_close_log.gs
+
+
 // ============================================================
 // cleanup_daily_close_log.gs — ลบราคาหุ้นเก่าใน Daily_Close_Log (ไฟล์ภายนอก)
 // เงื่อนไข: ticker ที่ไม่มีทั้งใน Holdings (US/TH) และ Watchlist (active)
@@ -24207,7 +25739,8 @@ function testUSCapitalGainTaxReport() {
 
 
 
-## alert_triggers.gs
+
+
 // ============================================================
 // alert_triggers.gs — แจ้งเตือนอัตโนมัติผ่าน Telegram
 // 1) Watchlist เข้า Buy Zone
@@ -24462,7 +25995,7 @@ function testSendAlertMessage() {
 }
 
 
-## watchlist_auto_update.gs
+
 // ============================================================
 // watchlist_auto_update.gs
 // อัปเดตราคาปัจจุบันในชีต "⭐ Watchlist" อัตโนมัติผ่าน Trigger
@@ -24564,7 +26097,7 @@ function testUpdateWatchlistPricesAuto() {
 
 
 
-## backup_notify.gs
+
 // ============================================================
 // backup_notify.gs
 // แจ้งเตือนผลการ Backup (สำเร็จ / ล้มเหลว) ผ่าน Telegram
@@ -25361,6 +26894,8 @@ function _clearTransactionCache() {
 // (ใช้ initPortfolioHistoryTracking() ที่มีอยู่แล้วใน webapp_15_portfolio_history.gs)
 
 
+
+
 ## webapp_17_relative_strength.gs
 // ══════════════════════════════════════════════════════════
 // webapp_17_relative_strength.gs — RS Line (Relative Strength vs Benchmark)
@@ -25508,7 +27043,6 @@ function _rsLinearSlope(values) {
   }
   return den !== 0 ? num / den : 0;
 }
-
 
 
 
@@ -25720,8 +27254,9 @@ function cmdScanNow(text) {
 }
 
 
+
 ## webapp_22_OverAllSignal_analysis.gs
-/**  webapp_22_OverAllSignal_analysis.gs
+/**webapp_22_OverAllSignal_analysis.gs
  * รวมสัญญาณจาก 6 ตัวชี้วัดที่มีอยู่แล้วในระบบ เป็นคะแนนเดียว (0-100)
  * นับ % ของสัญญาณที่เป็นขาขึ้น จากสัญญาณที่มีข้อมูลพร้อมใช้งานจริงเท่านั้น (ไม่นับตัวที่ข้อมูลไม่พอ)
  */
@@ -25849,10 +27384,6 @@ function getScreenerData() {
 }
 
 
-
-
-
-
 ## webapp_23_XDDay
 /** webapp_23_XDDay.gs
  * ดึงวันประกาศงบและวันขึ้นเครื่องหมาย XD ถัดไปจาก Yahoo Finance
@@ -25923,4 +27454,794 @@ function getEarningsCalendar(ticker, market) {
 
 
 
-## webapp_17_relative_strength.gs
+## webapp_19_TrailTierLog.gs
+const TRAIL_LOG_SHEET = 'TrailTierLog';
+
+function _findTrailLogRow(sheet, ticker, market, tierKey) {
+  if (sheet.getLastRow() < 2) return -1;
+  const data = sheet.getRange(2, 2, sheet.getLastRow() - 1, 3).getValues(); // Ticker,Market,TierKey
+  for (let i = 0; i < data.length; i++) {
+    if (String(data[i][0]).toUpperCase() === ticker && data[i][1] === market && data[i][2] === tierKey) {
+      return i + 2;
+    }
+  }
+  return -1;
+}
+
+function _getExecutedTiers(ticker, market, currentHighestHigh, resetPct) {
+  const sheet = getSheet(TRAIL_LOG_SHEET);
+  if (!sheet || sheet.getLastRow() < 2) return new Map();
+
+  const data = sheet.getRange(2, 1, sheet.getLastRow() - 1, 13).getValues();
+  const executed = new Map();
+
+  data.forEach(row => {
+    const [logId, t, m, tierKey, execDate, highAtExec, stopPrice, triggerPrice, sharesSold, avgCost, atr, multiplier, currentPrice] = row;
+    if (String(t).toUpperCase() !== ticker || m !== market) return;
+    // High ใหม่สูงกว่าที่บันทึกไว้เกิน resetPct% → รอบใหม่ ไม่นับว่า executed แล้ว (auto-reset)
+    if (currentHighestHigh > Number(highAtExec) * (1 + resetPct / 100)) return;
+    executed.set(tierKey, { logId, execDate, highAtExec, stopPrice, triggerPrice, sharesSold, avgCost, atr, multiplier, currentPrice });
+  });
+
+  return executed;
+}
+
+/**
+ * รับแค่ ticker/market/tierKey จาก UI — Backend คำนวณค่าจริงเองทั้งหมดจาก
+ * getPortfolioTrailingStop() ล่าสุด ไม่เชื่อค่าที่ UI ส่งมา (Single Source of Truth)
+ * Upsert: มี tier เดิม → update ทับ, ยังไม่มี → insert ใหม่ (ใช้ LogId เดิมถ้ามี)
+ */
+function markTrailTierExecuted(ticker, market, tierKey) {
+  try {
+    ticker = String(ticker || '').trim().toUpperCase();
+
+    const fresh = getPortfolioTrailingStop(ticker, market);
+    if (!fresh.success) return { success: false, error: 'คำนวณข้อมูลล่าสุดไม่ได้: ' + fresh.error };
+
+    const tier = fresh.tiers.find(t => t.key === tierKey);
+    if (!tier) return { success: false, error: 'ไม่พบ tier: ' + tierKey };
+
+    const sheet = getSheet(TRAIL_LOG_SHEET);
+    if (!sheet) throw new Error('ไม่พบ sheet: ' + TRAIL_LOG_SHEET);
+
+    const existingRow = _findTrailLogRow(sheet, ticker, market, tierKey);
+    const logId = existingRow > 0
+      ? sheet.getRange(existingRow, 1).getValue()
+      : Utilities.getUuid();
+
+    const rowValues = [
+      logId, ticker, market, tierKey, new Date(),
+      fresh.highestHighSinceEntry, tier.stopPrice, fresh.triggerPrice, tier.sharesToSell,
+      fresh.avgCost, fresh.atr, tier.multiplier, fresh.currentPrice
+    ];
+
+    if (existingRow > 0) {
+      sheet.getRange(existingRow, 1, 1, 13).setValues([rowValues]);
+    } else {
+      sheet.appendRow(rowValues);
+    }
+    return { success: true, logId, snapshot: rowValues };
+  } catch (e) {
+    logError('markTrailTierExecuted', e);
+    return { success: false, error: e.message };
+  }
+}
+
+/** รีเซ็ตเฉพาะ tier ที่ระบุ ไม่แตะ tier อื่น */
+function resetTrailTierState(ticker, market, tierKey) {
+  try {
+    ticker = String(ticker || '').trim().toUpperCase();
+    const sheet = getSheet(TRAIL_LOG_SHEET);
+    if (!sheet) throw new Error('ไม่พบ sheet: ' + TRAIL_LOG_SHEET);
+
+    const row = _findTrailLogRow(sheet, ticker, market, tierKey);
+    if (row > 0) sheet.deleteRow(row);
+
+    return { success: true };
+  } catch (e) {
+    logError('resetTrailTierState', e);
+    return { success: false, error: e.message };
+  }
+}
+
+
+## webapp_18_dividend_planning.gs
+// ══════════════════════════════════════════════════════════
+// webapp_18_dividend_planning.gs — แผนเงินปันผลทั้งปี + โปรเจกชัน
+// ------------------------------------------------------------
+// ใช้ trailing 12 เดือนจริง (ไม่ annualize จาก YTD) เพื่อความแม่นยำ
+// รวมทั้ง US+TH (ยังไม่รวมกองทุน เพราะระบบยังไม่มี field ปันผลกองทุนแยก)
+// ══════════════════════════════════════════════════════════
+
+function getDividendPlanningData() {
+  try {
+    const goal = getFinancialGoalData();
+    if (!goal.success) return { success: false, error: goal.error };
+
+    const divSheet = getSheet(SHEETS.DIV);
+    const annualTarget = Number(divSheet.getRange('AA7').getValue()) || 0;
+    const ytd = getDividendYTD(); // { thTHB, usUSD, totalTHB, target }
+
+    // ── รวมปันผล 12 เดือนล่าสุด (ไม่ใช่ปีปฏิทิน) จาก transaction log ปันผลจริง ──
+    const trailing12mo = _getTrailing12MonthDividendTHB();
+
+    const totalAssetTHB = goal.totalAsset;
+    const currentYieldPct = totalAssetTHB > 0 ? (trailing12mo.totalTHB / totalAssetTHB) * 100 : 0;
+
+    const progressPct = annualTarget > 0 ? (ytd.totalTHB / annualTarget) * 100 : null;
+    const remainingToTarget = annualTarget > 0 ? Math.max(0, annualTarget - ytd.totalTHB) : null;
+
+    // ── เดือนที่เหลือในปีนี้ ใช้ประมาณว่าถ้าอัตราปัจจุบันคงที่ จะจบปีที่เท่าไหร่ ──
+    const now = new Date();
+    const monthsElapsed = now.getMonth() + 1;
+    const monthsRemaining = 12 - monthsElapsed;
+    const avgMonthlyThisYear = monthsElapsed > 0 ? ytd.totalTHB / monthsElapsed : 0;
+    const projectedYearEndTHB = ytd.totalTHB + (avgMonthlyThisYear * monthsRemaining);
+
+    return {
+      success: true,
+      annualTarget,
+      ytdDividendTHB: ytd.totalTHB,
+      progressPct,
+      remainingToTarget,
+      projectedYearEndTHB: _taxRound(projectedYearEndTHB, 2),
+      trailing12moTHB: _taxRound(trailing12mo.totalTHB, 2),
+      trailing12moByMarket: { th: _taxRound(trailing12mo.thTHB, 2), us: _taxRound(trailing12mo.usTHB, 2) },
+      totalAssetTHB,
+      currentYieldPct: _taxRound(currentYieldPct, 3),
+      updatedAt: Utilities.formatDate(new Date(), 'Asia/Bangkok', 'dd/MM/yyyy HH:mm:ss')
+    };
+  } catch (e) {
+    logError('getDividendPlanningData', e);
+    return { success: false, error: e.message };
+  }
+}
+
+// ── รวมปันผลสุทธิ (netTHB) ของ 12 เดือนล่าสุดนับถอยจากวันนี้ (ไม่ใช่ปีปฏิทิน)
+//    อ่านจากชีตปันผลตรงๆ ด้วย DIV_COL เดิม (ตัวเดียวกับ getDividendMonthly ใน data.gs) ──
+function _getTrailing12MonthDividendTHB() {
+  const sheet = getSheet(SHEETS.DIV);
+  const lastRow = sheet.getLastRow();
+  if (lastRow < START_ROW.DIV) return { totalTHB: 0, thTHB: 0, usTHB: 0 };
+
+  const numRows = lastRow - START_ROW.DIV + 1;
+  const rows = sheet.getRange(START_ROW.DIV, 1, numRows, 17).getValues();
+
+  const cutoff = new Date();
+  cutoff.setMonth(cutoff.getMonth() - 12);
+
+  let totalTHB = 0, thTHB = 0, usTHB = 0;
+  rows.forEach(row => {
+    const payDate = row[DIV_COL.PAY_DATE - 1];
+    const market = String(row[DIV_COL.MARKET - 1] || '').trim().toUpperCase();
+    const netTHB = Number(row[DIV_COL.NET_THB - 1]) || 0;
+    if (!(payDate instanceof Date) || payDate < cutoff) return;
+
+    totalTHB += netTHB;
+    if (market === 'TH') thTHB += netTHB; else usTHB += netTHB;
+  });
+
+  return { totalTHB, thTHB, usTHB };
+}
+
+// ── บันทึกเป้าหมายปันผลทั้งปีใหม่ — เขียนกลับไปที่ AA7 (cell เดิมที่ getDividendYTD() อ่านอยู่แล้ว) ──
+function setDividendAnnualTarget(amount) {
+  try {
+    const target = parseFloat(amount);
+    if (isNaN(target) || target < 0) return { success: false, error: 'กรุณาระบุจำนวนเงินที่ถูกต้อง' };
+
+    const sheet = getSheet(SHEETS.DIV);
+    sheet.getRange('AA7').setValue(target).setNumberFormat('#,##0.00');
+    return { success: true, target };
+  } catch (e) {
+    logError('setDividendAnnualTarget', e);
+    return { success: false, error: e.message };
+  }
+}
+
+## webapp_19_dividend_summary_years.gs
+// ══════════════════════════════════════════════════════════
+// webapp_19_dividend_summary_years.gs
+// เติมแถวปีใหม่ในตาราง "สรุปปันผลรายปี" (คอลัมน์ U:AA ในชีต SHEETS.DIV)
+// ล่วงหน้าอัตโนมัติ โดยไม่กระทบแถวบันทึกปันผลดิบ (คอลัมน์ B-R) ในชีตเดียวกัน
+// ------------------------------------------------------------
+// หลักการ:
+// 1. หาแถว "รวม" (total) ในคอลัมน์ U เพื่อกำหนดขอบเขตตาราง
+// 2. ใช้ Range.insertCells(Dimension.ROWS) แทรกเฉพาะคอลัมน์ U:AA
+//    (ไม่ใช้ insertRowBefore ทั้งแถว เพราะจะดันข้อมูลปันผลดิบเลื่อนไปด้วย)
+// 3. คัดลอก "รูปแบบ" (format) จากแถวปีล่าสุดด้วย copyFormatToRange
+//    แล้วเขียนสูตรของ V/W/X ใหม่เอง (แทนที่ตัวเลขปีในสูตรเดิม) —
+//    ไม่ใช้ copyTo() เพราะจะไปเลื่อน range I7:I186/M7:M186 ที่เป็น
+//    ขอบเขตตายตัวของตารางปันผลดิบ ทำให้สูตรพังได้
+// 4. อัปเดตสูตร SUM ของแถว "รวม" ให้ครอบคลุมปีใหม่ที่เพิ่ม
+// ══════════════════════════════════════════════════════════
+
+const DIVSUM_COL = { YEAR: 21, THB: 22, USD: 23, TOTAL: 24, DIFF_THB: 25, DIFF_PCT: 26, TARGET: 27 }; // U..AA
+const DIVSUM_YEARS_AHEAD = 5; // เผื่อล่วงหน้าเสมอ N ปีจากปีปัจจุบัน
+
+/**
+ * เติมแถวปีที่ขาดหายไปในตารางสรุปปันผลรายปี จนถึง (ปีปัจจุบัน + DIVSUM_YEARS_AHEAD)
+ * เรียกได้ทั้งจากปุ่มในหน้า Settings และจาก trigger อัตโนมัติ
+ */
+function addMissingDividendSummaryYears() {
+  try {
+    const sheet = getSheet(SHEETS.DIV);
+    const lastRow = sheet.getLastRow();
+
+    // ── หาแถว "รวม" (total) และไล่เก็บแถวปีทั้งหมดที่มีอยู่แล้ว ──
+    let totalRow = -1;
+    const yearRows = []; // [{row, year}]
+    for (let r = 1; r <= lastRow; r++) {
+      const val = sheet.getRange(r, DIVSUM_COL.YEAR).getValue();
+      if (String(val).trim() === 'รวม') { totalRow = r; break; }
+      if (typeof val === 'number' && val >= 2000 && val <= 2100) yearRows.push({ row: r, year: val });
+    }
+    if (totalRow === -1 || !yearRows.length) {
+      return { success: false, error: 'ไม่พบตารางสรุปปันผลรายปี (คอลัมน์ U) หรือแถว "รวม" — ตรวจโครงสร้างชีตอีกครั้ง' };
+    }
+
+    const firstYearRow = yearRows[0];
+    let lastYearEntry = yearRows[yearRows.length - 1];
+
+    const currentYear = new Date().getFullYear();
+    const targetMaxYear = currentYear + DIVSUM_YEARS_AHEAD;
+
+    const missingYears = [];
+    for (let y = lastYearEntry.year + 1; y <= targetMaxYear; y++) missingYears.push(y);
+    if (!missingYears.length) {
+      return { success: true, added: 0, message: 'มีข้อมูลครบถึงปี ' + lastYearEntry.year + ' อยู่แล้ว (เผื่อไว้ถึงปี ' + targetMaxYear + ')' };
+    }
+
+    // ── คำนวณส่วนต่างเป้าหมายจาก 2 ปีล่าสุด ใช้ต่อยอดปีใหม่ (ถ้าคำนวณไม่ได้ ใช้ค่าเดิมซ้ำ) ──
+    let targetIncrement = 0;
+    if (yearRows.length >= 2) {
+      const lastTarget = Number(sheet.getRange(lastYearEntry.row, DIVSUM_COL.TARGET).getValue()) || 0;
+      const prevTarget = Number(sheet.getRange(yearRows[yearRows.length - 2].row, DIVSUM_COL.TARGET).getValue()) || 0;
+      targetIncrement = lastTarget - prevTarget;
+    }
+
+    missingYears.forEach(year => {
+      // ── แทรกเฉพาะคอลัมน์ U:AA ที่ตำแหน่ง totalRow (ดันแถว "รวม" กับปีอื่นๆ ที่อยู่ล่างมันลง 1 แถว
+      //    เฉพาะในคอลัมน์นี้เท่านั้น — คอลัมน์อื่นในแถวเดียวกัน (ปันผลดิบ) ไม่ถูกแตะต้องเลย) ──
+      const insertPoint = sheet.getRange(totalRow, DIVSUM_COL.YEAR, 1, 7); // U..AA = 7 คอลัมน์
+      insertPoint.insertCells(SpreadsheetApp.Dimension.ROWS);
+
+      const newRow = totalRow; // แถวว่างใหม่ที่เพิ่งแทรก อยู่ตำแหน่งเดิมของ totalRow (ก่อนถูกดันลง)
+
+      // ── คัดลอกรูปแบบ (สี, border, number format) จากแถวปีล่าสุด — ไม่แตะสูตร/ค่า ──
+      const sourceRange = sheet.getRange(lastYearEntry.row, DIVSUM_COL.YEAR, 1, 7);
+      const destRange = sheet.getRange(newRow, DIVSUM_COL.YEAR, 1, 7);
+      sourceRange.copyFormatToRange(sheet, DIVSUM_COL.YEAR, DIVSUM_COL.TARGET, newRow, newRow);
+
+      // ── ปี ──
+      sheet.getRange(newRow, DIVSUM_COL.YEAR).setValue(year);
+
+      // ── สูตร ปันผลไทย (V) / ปันผลสหรัฐ (W) / รวม (X) — ดึงสูตรจากแถวปีล่าสุด
+      //    แทนที่ "เลขปีเดิม" ด้วย "ปีใหม่" ในตัวสูตร แล้วเขียนกลับตรงๆ (ไม่ผ่าน copyTo
+      //    เพราะ copyTo จะพยายามเลื่อน range I7:I186 ตามระยะห่างแถว ทำให้สูตรอ้างผิดช่วง) ──
+      [DIVSUM_COL.THB, DIVSUM_COL.USD, DIVSUM_COL.TOTAL].forEach(col => {
+        const srcFormula = sheet.getRange(lastYearEntry.row, col).getFormula();
+        if (srcFormula) {
+          const newFormula = srcFormula.replace(new RegExp(String(lastYearEntry.year), 'g'), String(year));
+          sheet.getRange(newRow, col).setFormula(newFormula);
+        }
+      });
+
+      // ── เพิ่ม/ลด (THB) และ เพิ่ม/ลด % — เทียบกับแถวปีก่อนหน้าโดยตรง (แถวติดกันเสมอ) ──
+      sheet.getRange(newRow, DIVSUM_COL.DIFF_THB).setFormula(
+        `=X${newRow}-X${lastYearEntry.row}`
+      );
+      sheet.getRange(newRow, DIVSUM_COL.DIFF_PCT).setFormula(
+        `=IFERROR((X${newRow}-X${lastYearEntry.row})/X${lastYearEntry.row},"—")`
+      );
+
+      // ── เป้าหมาย — ต่อยอดจากส่วนต่าง 2 ปีล่าสุดที่คำนวณไว้ (ผู้ใช้แก้ไขเองได้ทีหลัง) ──
+      const lastTargetVal = Number(sheet.getRange(lastYearEntry.row, DIVSUM_COL.TARGET).getValue()) || 0;
+      sheet.getRange(newRow, DIVSUM_COL.TARGET).setValue(Math.max(0, lastTargetVal + targetIncrement));
+
+      // ── เลื่อนตัวชี้ไปแถวใหม่ สำหรับวนรอบปีถัดไป ──
+      lastYearEntry = { row: newRow, year };
+      totalRow = newRow + 1; // แถว "รวม" ถูกดันลงไป 1 แถวเสมอในแต่ละรอบ
+    });
+
+    // ── อัปเดตสูตร SUM ของแถว "รวม" ให้ครอบคลุมช่วงปีใหม่ทั้งหมด (first...last) ──
+    [DIVSUM_COL.THB, DIVSUM_COL.USD, DIVSUM_COL.TOTAL].forEach(col => {
+      const totalFormula = sheet.getRange(totalRow, col).getFormula();
+      if (totalFormula) {
+        const colLetter = String.fromCharCode(64 + col); // 22->V, 23->W, 24->X
+        const newFormula = totalFormula.replace(
+          new RegExp(colLetter + '\\d+:' + colLetter + '\\d+', 'g'),
+          colLetter + firstYearRow.row + ':' + colLetter + lastYearEntry.row
+        );
+        sheet.getRange(totalRow, col).setFormula(newFormula);
+      }
+    });
+
+    return {
+      success: true,
+      added: missingYears.length,
+      years: missingYears,
+      message: 'เพิ่มปี ' + missingYears.join(', ') + ' แล้ว (' + missingYears.length + ' ปี)'
+    };
+  } catch (e) {
+    logError('addMissingDividendSummaryYears', e);
+    return { success: false, error: e.message };
+  }
+}
+
+// ── ตั้ง trigger อัตโนมัติ: เช็คทุกวันที่ 1 ของเดือน เวลาตี 2 — ถ้าปีล่าสุดในตาราง
+//    ใกล้หมด (น้อยกว่า currentYear+DIVSUM_YEARS_AHEAD) จะเติมให้เองอัตโนมัติ
+//    ไม่ต้องรอผู้ใช้กดปุ่มเอง (self-healing เหมือน logPortfolioValueSnapshot) ──
+function createDividendSummaryYearTrigger() {
+  ScriptApp.getProjectTriggers().forEach(t => {
+    if (t.getHandlerFunction() === 'addMissingDividendSummaryYears') ScriptApp.deleteTrigger(t);
+  });
+  ScriptApp.newTrigger('addMissingDividendSummaryYears').timeBased().onMonthDay(1).atHour(2).create();
+  addMissingDividendSummaryYears(); // รันทันที 1 ครั้งตอนตั้งค่า กันรอถึงรอบเดือนหน้า
+}
+
+// ── รันเองใน Apps Script Editor เพื่อทดสอบ ──
+function testAddMissingDividendSummaryYears() {
+  Logger.log(JSON.stringify(addMissingDividendSummaryYears(), null, 2));
+}
+
+## webapp_20_interest_list.gs
+
+// ══════════════════════════════════════════════════════════
+// webapp_20_interest_list.gs — 💡 หุ้นที่สนใจ (Interest List)
+// ------------------------------------------------------------
+// รายชื่อหุ้นที่อยากเก็บไว้ดูก่อน ยังไม่ต้องวิเคราะห์อะไรเลย
+// เก็บแค่ Ticker + ชื่อบริษัท (ดึงจาก Yahoo ครั้งเดียวตอนเพิ่ม ไม่คำนวณ
+// technical ใดๆ) แยกหุ้นไทย/สหรัฐ ลบได้ตรงๆ (hard delete ไม่ต้อง soft
+// delete เพราะเป็นแค่ลิสต์เก็บไอเดีย ไม่มีประวัติที่ต้องรักษาไว้)
+//
+// ⚠️ reuse _wlFetchYahooQuote() จาก webapp_07_watchlist.gs (โปรเจกต์
+//    เดียวกัน ไม่ต้องประกาศซ้ำ) เพื่อดึงชื่อบริษัทตอนเพิ่ม
+// ══════════════════════════════════════════════════════════
+
+const INTEREST_SHEET_NAME = '💡 หุ้นที่สนใจ';
+const INTEREST_START_ROW = 2;
+// คอลัมน์: A=Ticker B=Market C=CompanyName D=Note E=DateAdded
+
+function _getOrCreateInterestSheet() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName(INTEREST_SHEET_NAME);
+  if (!sheet) {
+    sheet = ss.insertSheet(INTEREST_SHEET_NAME);
+    sheet.getRange(1, 1, 1, 5).setValues([['Ticker', 'Market', 'CompanyName', 'Note', 'DateAdded']])
+      .setFontWeight('bold').setBackground('#e8eaf6');
+    sheet.setFrozenRows(1);
+    sheet.setColumnWidths(1, 5, 140);
+  }
+  return sheet;
+}
+
+// ── ดึงรายการทั้งหมด แยกกลุ่มตามตลาดให้ frontend ──
+function getInterestListData() {
+  try {
+    const sheet = _getOrCreateInterestSheet();
+    const lastRow = sheet.getLastRow();
+    if (lastRow < INTEREST_START_ROW) return { success: true, us: [], th: [] };
+
+    const numRows = lastRow - INTEREST_START_ROW + 1;
+    const rows = sheet.getRange(INTEREST_START_ROW, 1, numRows, 5).getValues();
+
+    const us = [], th = [];
+    rows.forEach((r, i) => {
+      const ticker = String(r[0] || '').trim().toUpperCase();
+      if (!ticker) return;
+      const market = String(r[1] || 'US').trim().toUpperCase();
+      const item = {
+        rowIndex: INTEREST_START_ROW + i,
+        ticker,
+        market,
+        companyName: r[2] || '',
+        note: r[3] || '',
+        dateAdded: r[4] ? Utilities.formatDate(new Date(r[4]), 'Asia/Bangkok', 'dd/MM/yyyy') : ''
+      };
+      (market === 'TH' ? th : us).push(item);
+    });
+
+    return { success: true, us, th };
+  } catch (e) {
+    logError('getInterestListData', e);
+    return { success: false, error: e.message, us: [], th: [] };
+  }
+}
+
+// ── เพิ่มหุ้นเข้าลิสต์ — ดึงชื่อบริษัทอัตโนมัติจาก Yahoo (ครั้งเดียว ไม่คำนวณ technical ใดๆ) ──
+function addInterestListItem(ticker, market, note) {
+  try {
+    ticker = String(ticker || '').trim().toUpperCase();
+    market = (String(market || '').trim().toUpperCase() === 'TH') ? 'TH' : 'US';
+    if (!ticker) return { success: false, error: 'กรุณาระบุ ticker' };
+
+    // ── กันเพิ่มซ้ำ ──
+    const existing = getInterestListData();
+    const dup = [...(existing.us || []), ...(existing.th || [])].some(x => x.ticker === ticker && x.market === market);
+    if (dup) return { success: false, error: ticker + ' อยู่ในลิสต์นี้อยู่แล้ว' };
+
+    const quote = _wlFetchYahooQuote(ticker, market); // reuse จาก webapp_07_watchlist.gs
+    if (!quote) return { success: false, error: 'ไม่พบหุ้น "' + ticker + '" ตรวจสอบชื่อ ticker และตลาดอีกครั้ง' };
+
+    const sheet = _getOrCreateInterestSheet();
+    const row = sheet.getLastRow() + 1;
+
+    sheet.getRange(row, 1).setValue(ticker);
+    sheet.getRange(row, 2).setValue(market);
+    sheet.getRange(row, 3).setValue(quote.longName || ticker);
+    sheet.getRange(row, 4).setValue(note || '');
+    sheet.getRange(row, 5).setValue(new Date()).setNumberFormat('yyyy-mm-dd');
+
+    return { success: true, row, companyName: quote.longName || ticker };
+  } catch (e) {
+    logError('addInterestListItem', e);
+    return { success: false, error: e.message };
+  }
+}
+
+// ── ลบออกจากลิสต์ (hard delete) ──
+function removeInterestListItem(ticker, market) {
+  try {
+    ticker = String(ticker || '').trim().toUpperCase();
+    market = String(market || '').trim().toUpperCase();
+
+    const sheet = _getOrCreateInterestSheet();
+    const lastRow = sheet.getLastRow();
+    if (lastRow < INTEREST_START_ROW) return { success: false, error: 'ไม่พบรายการ' };
+
+    const numRows = lastRow - INTEREST_START_ROW + 1;
+    const rows = sheet.getRange(INTEREST_START_ROW, 1, numRows, 2).getValues();
+
+    for (let i = 0; i < rows.length; i++) {
+      const rTicker = String(rows[i][0] || '').trim().toUpperCase();
+      const rMarket = String(rows[i][1] || '').trim().toUpperCase();
+      if (rTicker === ticker && rMarket === market) {
+        sheet.deleteRow(INTEREST_START_ROW + i);
+        return { success: true, ticker };
+      }
+    }
+    return { success: false, error: 'ไม่พบ ' + ticker + ' ในลิสต์' };
+  } catch (e) {
+    logError('removeInterestListItem', e);
+    return { success: false, error: e.message };
+  }
+}
+
+
+
+## webapp_21_flexible_buy_plan.gs
+// ══════════════════════════════════════════════════════════
+// webapp_21_flexible_buy_plan.gs — แผนแบ่งไม้แบบยืดหยุ่น
+// ไม้ 1 อัตโนมัติ (ราคาจริง/ราคาปัจจุบัน) — ไม้ 2,3 ผู้ใช้กำหนด %+ราคาเอง
+// ══════════════════════════════════════════════════════════
+
+const BUY_PLAN_REF_PRICE_COL = 15; // O — ราคาอ้างอิงตอนสร้างแผน (ใช้แทนราคาซื้อจริงถ้ายังไม่เคยถือ)
+
+// ── หาราคาอ้างอิงไม้ 1 (ราคาซื้อจริงถ้าถืออยู่แล้ว / ราคาปัจจุบันถ้ายังไม่ถือ)
+//    แยกออกมาให้ modal preview เรียกดูก่อนบันทึกได้ ไม่ต้องเดา ──
+function _resolveBuyPlanReferencePrice(ticker, market) {
+  const logSheetName = (market === 'TH') ? SHEETS.TH_TRANS : SHEETS.US_TRANS;
+  const logRows = getSheet(logSheetName).getDataRange().getValues();
+  const firstBuy = logRows
+    .filter(r => String(r[2] || '').trim().toUpperCase().replace(/_C\d+$/i, '') === ticker && r[3] === 'ซื้อ')
+    .map(r => ({ date: r[1], price: parseFloat(r[5]) }))
+    .filter(x => x.date && !isNaN(x.price))
+    .sort((a, b) => new Date(a.date) - new Date(b.date))[0];
+
+  if (firstBuy) return { price: firstBuy.price, source: 'first_buy' };
+
+  const quote = _wlFetchYahooQuote(ticker, market);
+  if (!quote) return { price: null, source: null };
+  return { price: quote.price, source: 'current_price' };
+}
+
+// ── Preview ราคาอ้างอิงก่อนบันทึก — ใช้ตอนเปิด modal ──
+function getBuyPlanReferencePriceHint(ticker, market) {
+  try {
+    ticker = String(ticker || '').trim().toUpperCase();
+    const ref = _resolveBuyPlanReferencePrice(ticker, market);
+    if (ref.price === null) return { success: false, error: 'ไม่พบราคาของ ' + ticker };
+    return { success: true, referencePrice: ref.price, source: ref.source };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+}
+
+function saveFlexibleBuyPlan(ticker, market, totalBudget, legsInput, note) {
+  try {
+    ticker = String(ticker || '').trim().toUpperCase();
+    market = String(market || '').trim().toUpperCase();
+    totalBudget = parseFloat(totalBudget);
+    if (!totalBudget || totalBudget <= 0) return { success: false, error: 'กรุณาระบุงบลงทุนรวมที่ถูกต้อง' };
+    if (!legsInput || !legsInput.length) return { success: false, error: 'กรุณากำหนดไม้ 2 อย่างน้อย 1 ไม้' };
+    if (legsInput.length > 2) return { success: false, error: 'รองรับสูงสุด 3 ไม้ (ไม้ 1 อัตโนมัติ + กำหนดเองอีก 2 ไม้)' };
+
+    const extraPctSum = legsInput.reduce((s, l) => s + (parseFloat(l.pct) || 0), 0);
+    if (extraPctSum >= 100) return { success: false, error: '% รวมของไม้ 2-3 ต้องน้อยกว่า 100% (ต้องเหลือให้ไม้ 1)' };
+    if (extraPctSum <= 0) return { success: false, error: 'กรุณาระบุ % ของไม้ 2-3 ให้มากกว่า 0' };
+    for (const l of legsInput) {
+      if (!l.price || parseFloat(l.price) <= 0) return { success: false, error: 'กรุณาระบุราคาเป้าหมายของทุกไม้ให้ครบ' };
+    }
+
+    const ref = _resolveBuyPlanReferencePrice(ticker, market);
+    if (ref.price === null) return { success: false, error: 'ไม่พบราคาปัจจุบันของ ' + ticker };
+    const referencePrice = ref.price;
+
+    // ── VALIDATION: ราคาต้องเรียงจากมากไปน้อย ไม้1(ref) > ไม้2 > ไม้3
+    //    ป้องกัน DCA ไล่ราคาลงพัง — ถ้าไม้ถัดไปแพงกว่าหรือเท่าไม้ก่อนหน้า triggerPct จะ
+    //    กลายเป็นค่าติดลบ/ศูนย์ ทำให้ logic จับคู่ธุรกรรมใน buildPriceBasedPlanStatus ผิดเพี้ยน ──
+    let prevPrice = referencePrice;
+    let prevLabel = 'ไม้ 1 (ราคาอ้างอิง ' + fmtNumServer(referencePrice) + ')';
+    for (let i = 0; i < legsInput.length; i++) {
+      const p = parseFloat(legsInput[i].price);
+      const legLabel = 'ไม้ ' + (i + 2);
+      if (p >= prevPrice) {
+        return {
+          success: false,
+          error: `ราคาเป้าหมาย${legLabel} (${fmtNumServer(p)}) ต้องต่ำกว่า${prevLabel} — แผนนี้เป็นการไล่ซื้อตอนราคาย่อลง แต่ละไม้ต้องถูกกว่าไม้ก่อนหน้าเสมอ`
+        };
+      }
+      prevPrice = p;
+      prevLabel = legLabel + ' (' + fmtNumServer(p) + ')';
+    }
+
+    const leg1Pct = 100 - extraPctSum;
+    const legsForSheet = [{ pct: leg1Pct, triggerPct: 0 }];
+    legsInput.forEach(l => {
+      const price = parseFloat(l.price);
+      const triggerPct = ((referencePrice - price) / referencePrice) * 100;
+      legsForSheet.push({ pct: parseFloat(l.pct), triggerPct: _taxRound(triggerPct, 2) });
+    });
+
+    const sheet = getSheet(BUY_PLAN_SHEET.NAME);
+    const lastRow = sheet.getLastRow();
+    let targetRow = -1;
+    if (lastRow >= BUY_PLAN_SHEET.START_ROW) {
+      const numRows = lastRow - BUY_PLAN_SHEET.START_ROW + 1;
+      const rows = sheet.getRange(BUY_PLAN_SHEET.START_ROW, 1, numRows, 2).getValues();
+      for (let i = 0; i < rows.length; i++) {
+        if (String(rows[i][0]).trim().toUpperCase() === ticker && String(rows[i][1]).trim().toUpperCase() === market) {
+          targetRow = BUY_PLAN_SHEET.START_ROW + i; break;
+        }
+      }
+    }
+    if (targetRow === -1) targetRow = _getNextEmptyRow(sheet, 1, BUY_PLAN_SHEET.START_ROW);
+
+    sheet.getRange(targetRow, 1).setValue(ticker);
+    sheet.getRange(targetRow, 2).setValue(market);
+    sheet.getRange(targetRow, 3).setValue('price');
+    sheet.getRange(targetRow, 4).setValue(totalBudget);
+    legsForSheet.forEach((leg, i) => {
+      sheet.getRange(targetRow, 5 + i * 2).setValue(leg.pct);
+      sheet.getRange(targetRow, 6 + i * 2).setValue(leg.triggerPct);
+    });
+    for (let i = legsForSheet.length; i < 3; i++) {
+      sheet.getRange(targetRow, 5 + i * 2).setValue('');
+      sheet.getRange(targetRow, 6 + i * 2).setValue('');
+    }
+    sheet.getRange(targetRow, 13).setValue(new Date());
+    sheet.getRange(targetRow, 14).setValue(note || 'แผนแบ่งไม้แบบกำหนดเอง');
+    sheet.getRange(targetRow, BUY_PLAN_REF_PRICE_COL).setValue(referencePrice);
+
+    return { success: true, row: targetRow, referencePrice, leg1Pct };
+  } catch (e) {
+    logError('saveFlexibleBuyPlan', e);
+    return { success: false, error: e.message };
+  }
+}
+
+// ── ฟอร์แมตตัวเลขง่ายๆ ใช้ในข้อความ error ฝั่ง server (ไม่ต้องพึ่ง fmtNum ฝั่ง client) ──
+function fmtNumServer(v) {
+  return Number(v).toFixed(2);
+}
+
+
+/** แก้ไขงบลงทุนรวม — ไม่แตะ %/ราคาเป้าหมายเดิม */
+function updateBuyPlanTarget(ticker, market, newBudget) {
+  try {
+    ticker = String(ticker || '').trim().toUpperCase();
+    market = String(market || '').trim().toUpperCase();
+    newBudget = parseFloat(newBudget);
+    if (!newBudget || newBudget <= 0) return { success: false, error: 'กรุณาระบุงบลงทุนที่ถูกต้อง' };
+
+    const sheet = getSheet(BUY_PLAN_SHEET.NAME);
+    const lastRow = sheet.getLastRow();
+    if (lastRow < BUY_PLAN_SHEET.START_ROW) return { success: false, error: 'ไม่พบแผนของ ' + ticker };
+
+    const numRows = lastRow - BUY_PLAN_SHEET.START_ROW + 1;
+    const rows = sheet.getRange(BUY_PLAN_SHEET.START_ROW, 1, numRows, 2).getValues();
+    for (let i = 0; i < rows.length; i++) {
+      if (String(rows[i][0]).trim().toUpperCase() === ticker && String(rows[i][1]).trim().toUpperCase() === market) {
+        sheet.getRange(BUY_PLAN_SHEET.START_ROW + i, 4).setValue(newBudget);
+        return { success: true, newBudget };
+      }
+    }
+    return { success: false, error: 'ไม่พบแผนของ ' + ticker + ' — สร้างแผนใหม่ก่อน' };
+  } catch (e) {
+    logError('updateBuyPlanTarget', e);
+    return { success: false, error: e.message };
+  }
+}
+
+/** เทียบงบที่เหลือต้องลงทุนตามแผน กับเงินสดจริงที่มี (แยก THB/USD) */
+function getBuyPlanCashStatus(ticker, market) {
+  try {
+    const planResult = getBuyPlanForTicker(ticker, market);
+    if (!planResult.success) return { success: false, error: planResult.error };
+    if (planResult.planType !== 'price') return { success: false, error: 'ใช้ได้เฉพาะแผนแบบ Price-based' };
+
+    const steps = planResult.steps || [];
+    const totalBudget = planResult.budget || 0;
+    const spent = steps.filter(s => s.status === 'done').reduce((sum, s) => sum + (s.actualBudgetSpent || 0), 0);
+    const remainingBudget = Math.max(0, totalBudget - spent);
+
+    const cash = getCashBalances();
+    const cur = market === 'TH' ? 'THB' : 'USD';
+    const cashAvailable = market === 'TH' ? cash.thb : cash.usd;
+    const cashSufficient = cashAvailable >= remainingBudget;
+
+    return {
+      success: true, ticker, market, currency: cur,
+      totalBudget, spent: _taxRound(spent, 2), remainingBudget: _taxRound(remainingBudget, 2),
+      cashAvailable: _taxRound(cashAvailable, 2),
+      cashSufficient, shortfall: _taxRound(cashSufficient ? 0 : (remainingBudget - cashAvailable), 2)
+    };
+  } catch (e) {
+    logError('getBuyPlanCashStatus', e);
+    return { success: false, error: e.message };
+  }
+}
+
+
+// ── สแกนทุกแผนที่มีในชีต BuyPlan หาไม้ที่ canBuyNow แล้ว — ใช้แสดงในหน้า Summary
+//    จำกัดเฉพาะ planType='price' เท่านั้น (DCA แบบ time-based ไม่มี concept "ราคาที่ควรซื้อ") ──
+function getBuyPlanAlertsSummary() {
+  try {
+    const sheet = getSheet(BUY_PLAN_SHEET.NAME);
+    const lastRow = sheet.getLastRow();
+    if (lastRow < BUY_PLAN_SHEET.START_ROW) return { success: true, alerts: [] };
+
+    const numRows = lastRow - BUY_PLAN_SHEET.START_ROW + 1;
+    const rows = sheet.getRange(BUY_PLAN_SHEET.START_ROW, 1, numRows, 3).getValues();
+
+    const alerts = [];
+    rows.forEach(r => {
+      const ticker = String(r[0] || '').trim().toUpperCase();
+      const market = String(r[1] || '').trim().toUpperCase();
+      const planType = String(r[2] || '').trim().toLowerCase();
+      if (!ticker || planType !== 'price') return;
+
+      try {
+        const plan = getBuyPlanForTicker(ticker, market);
+        if (!plan.success || plan.planType !== 'price') return;
+
+        const readyStep = (plan.steps || []).find(s => s.status !== 'done' && s.canBuyNow);
+        if (readyStep) {
+          alerts.push({
+            ticker, market,
+            legNumber: readyStep.legNumber,
+            targetPrice: readyStep.targetPrice,
+            currentPrice: plan.currentPrice,
+            pct: readyStep.pct,
+            cur: plan.cur
+          });
+        }
+      } catch (innerErr) {
+        logError('getBuyPlanAlertsSummary:' + ticker, innerErr);
+        // ข้ามตัวที่ error ไป ไม่ให้ทั้งฟังก์ชันพัง
+      }
+    });
+
+    return { success: true, alerts };
+  } catch (e) {
+    logError('getBuyPlanAlertsSummary', e);
+    return { success: false, error: e.message, alerts: [] };
+  }
+}
+
+// ── เช็คว่าถ้าซื้อครบทุกไม้ตามแผน จะถือกี่ % ของพอร์ตรวม เทียบ concentrationWarnPct
+//    reuse getRiskSettings()/getFinancialGoalData()/getFxRate()/getHoldingsData() เดิมทั้งหมด ──
+function getBuyPlanConcentrationCheck(ticker, market) {
+  try {
+    const plan = getBuyPlanForTicker(ticker, market);
+    if (!plan.success || plan.planType !== 'price') return { success: false, error: 'ใช้ได้เฉพาะแผนแบบ Price-based' };
+
+    const risk = getRiskSettings();
+    const goal = getFinancialGoalData();
+    if (!goal.success) return { success: false, error: 'ดึงมูลค่าพอร์ตไม่สำเร็จ' };
+
+    const totalAssetTHB = goal.totalAsset;
+    const fx = market === 'US' ? getFxRate() : 1;
+
+    // ── มูลค่าที่ถืออยู่ตอนนี้ของ ticker นี้ (ถ้ามี) ──
+    const holdings = getHoldingsData();
+    const arr = market === 'TH' ? holdings.th : holdings.us;
+    const currentHolding = (arr || []).find(h => h.ticker === ticker);
+    const currentValueTHB = currentHolding ? (parseFloat(currentHolding.valueNow) || 0) * fx : 0;
+
+    // ── งบที่ยังไม่ได้ใช้ (ไม้ที่ยัง not done) แปลงเป็น THB ──
+    const remainingBudget = (plan.steps || [])
+      .filter(s => s.status !== 'done')
+      .reduce((sum, s) => sum + (s.budgetForLeg || 0), 0);
+    const remainingBudgetTHB = remainingBudget * fx;
+
+    const projectedValueTHB = currentValueTHB + remainingBudgetTHB;
+    const currentPct = totalAssetTHB > 0 ? (currentValueTHB / totalAssetTHB) * 100 : 0;
+    const projectedPct = totalAssetTHB > 0 ? (projectedValueTHB / totalAssetTHB) * 100 : 0;
+    const limitPct = risk.concentrationWarnPct * 100;
+
+    return {
+      success: true,
+      currentPct: _taxRound(currentPct, 1),
+      projectedPct: _taxRound(projectedPct, 1),
+      limitPct: _taxRound(limitPct, 1),
+      overLimit: projectedPct > limitPct,
+      currentValueTHB: _taxRound(currentValueTHB, 0),
+      projectedValueTHB: _taxRound(projectedValueTHB, 0)
+    };
+  } catch (e) {
+    logError('getBuyPlanConcentrationCheck', e);
+    return { success: false, error: e.message };
+  }
+}
+
+// ── ยกเลิกไม้ 2 หรือ 3 ที่ยังไม่ซื้อ — ลบออกจากแผนแล้วเลื่อนไม้ที่เหลือขึ้นมาแทนที่
+//    ห้ามยกเลิกไม้ 1 เพราะเป็นราคาอ้างอิงคำนวณ trigger% ของไม้อื่นทั้งหมด ──
+function cancelBuyPlanLeg(ticker, market, legNumber) {
+  try {
+    ticker = String(ticker || '').trim().toUpperCase();
+    market = String(market || '').trim().toUpperCase();
+    legNumber = parseInt(legNumber, 10);
+    if (legNumber === 1) return { success: false, error: 'ยกเลิกไม้ 1 ไม่ได้ เพราะเป็นราคาอ้างอิงของทั้งแผน' };
+
+    const cfg = _readBuyPlanConfig(ticker, market);
+    if (!cfg) return { success: false, error: 'ไม่พบแผนของ ' + ticker };
+    if (legNumber < 1 || legNumber > cfg.legs.length) return { success: false, error: 'ไม่พบไม้ที่ ' + legNumber + ' ในแผนนี้' };
+
+    // ── กันยกเลิกไม้ที่ซื้อไปแล้ว — เช็คสถานะจริงจาก getBuyPlanForTicker ก่อน ──
+    const statusCheck = getBuyPlanForTicker(ticker, market);
+    if (statusCheck.success) {
+      const targetStep = statusCheck.steps.find(s => s.legNumber === legNumber);
+      if (targetStep && targetStep.status === 'done') {
+        return { success: false, error: 'ไม้ ' + legNumber + ' ซื้อไปแล้ว ยกเลิกไม่ได้' };
+      }
+    }
+
+    // ── ลบไม้นั้นออก แล้วเลื่อนไม้ถัดไปขึ้นมาแทนที่ (index 0-based: legNumber 2 = index 1) ──
+    const remainingLegs = cfg.legs.filter((_, idx) => idx !== (legNumber - 1));
+
+    const sheet = getSheet(BUY_PLAN_SHEET.NAME);
+    const lastRow = sheet.getLastRow();
+    let targetRow = -1;
+    const numRows = lastRow - BUY_PLAN_SHEET.START_ROW + 1;
+    const rows = sheet.getRange(BUY_PLAN_SHEET.START_ROW, 1, numRows, 2).getValues();
+    for (let i = 0; i < rows.length; i++) {
+      if (String(rows[i][0]).trim().toUpperCase() === ticker && String(rows[i][1]).trim().toUpperCase() === market) {
+        targetRow = BUY_PLAN_SHEET.START_ROW + i; break;
+      }
+    }
+    if (targetRow === -1) return { success: false, error: 'ไม่พบแถวแผนในชีต' };
+
+    // ── เขียนไม้ที่เหลือกลับลงคอลัมน์ E-J เรียงใหม่ ที่เหลือเว้นว่าง ──
+    for (let i = 0; i < 3; i++) {
+      if (i < remainingLegs.length) {
+        sheet.getRange(targetRow, 5 + i * 2).setValue(remainingLegs[i].pct);
+        sheet.getRange(targetRow, 6 + i * 2).setValue(remainingLegs[i].triggerPct);
+      } else {
+        sheet.getRange(targetRow, 5 + i * 2).setValue('');
+        sheet.getRange(targetRow, 6 + i * 2).setValue('');
+      }
+    }
+
+    return { success: true, remainingLegsCount: remainingLegs.length };
+  } catch (e) {
+    logError('cancelBuyPlanLeg', e);
+    return { success: false, error: e.message };
+  }
+}
+
+
+##
+
+
