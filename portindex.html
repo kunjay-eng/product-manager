@@ -33,7 +33,7 @@
        breakdown กำไร/ขาดทุนเต็ม, Financial Goal, Allocation, Alert, Top Movers
   ════ -->
   <div class="page active" id="page-summary">
-    <div class="segtabs">
+    <div class="segtabs scrollable">
       <button class="segtab active c-all" id="sst-all"  onclick="switchSummarySub('all')">🌐 รวม</button>
       <button class="segtab"            id="sst-th"   onclick="switchSummarySub('th')">🇹🇭 ไทย</button>
       <button class="segtab"            id="sst-us"   onclick="switchSummarySub('us')">🇺🇸 สหรัฐ</button>
@@ -904,6 +904,14 @@
 <!-- /page-stocklist -->
 
 
+
+<!-- ════ PAGE: สรุปหุ้นรายตัว (Stock Card) — เฟส 2 ════ -->
+<div class="page" id="page-stockcard">
+  <div id="stockcard-content"><div class="spin-wrap"><div class="spinner"></div></div></div>
+</div>
+<!-- /page-stockcard -->
+
+
 <!-- ════ PAGE: หุ้นที่สนใจ (Interest List) ════ -->
 <div class="page" id="page-interest">
   <div class="segtabs">
@@ -1736,8 +1744,9 @@
 // เผื่อเพิ่มหน้าใหม่ในอนาคต: เพิ่ม entry ใน PAGE_LABELS + ปุ่มใน #bottom-nav
 // + <div class="page" id="page-XXX"> แล้วอัปเดต --nav-cols ใน :root
 // ══════════════════════════════
-const PAGE_LABELS = { summary:'Summary', holdings:'Holdings', analyze:'วิเคราะห์หุ้น', dividend:'ปันผลรายปี', entry:'บันทึก', watchlist:'Watchlist', settings:'ตั้งค่า', help:'Help', taxreport:'Tax Report', interest:'หุ้นที่สนใจ', stocklist:'หุ้นทั้งหมด' };
-const SHEET_PAGES = ['dividend', 'watchlist', 'settings', 'help', 'taxreport', 'interest', 'stocklist'];
+const PAGE_LABELS = { summary:'Summary', holdings:'Holdings', analyze:'วิเคราะห์หุ้น', dividend:'ปันผลรายปี', entry:'บันทึก', watchlist:'Watchlist', settings:'ตั้งค่า', help:'Help', taxreport:'Tax Report', interest:'หุ้นที่สนใจ', stocklist:'หุ้นทั้งหมด', stockcard:'สรุปหุ้น' };
+const SHEET_PAGES = ['dividend', 'watchlist', 'settings', 'help', 'taxreport', 'interest', 'stocklist', 'stockcard'];
+
 
 
 
@@ -7899,17 +7908,362 @@ let _stockListRenderedRows = [];
 function openStockListItem(idx) {
   const r = _stockListRenderedRows[idx];
   if (!r) return;
-
-  if (r.kind === 'holding') {
-    switchPage('analyze');
-    goToStockDetail(r.ticker, r.market);
-  } else {
-    switchPage('watchlist');
-    goToWatchlistAnalyze(r.ticker, r.market, r.targetPrice || 0, r.supportPrice);
-  }
+  goToStockCard(r.ticker, r.market, r.kind);
 }
 
 
+//
+// ══════════════════════════════════════════════════════════
+// STOCK CARD — หน้าสรุปหุ้นรายตัวแบบใหม่ (เฟส 2)
+// รับข้อมูลได้ 2 ทาง: getStockDetailData (หุ้นที่ถือ) / getWatchlistAnalysis (หุ้นเฝ้าดู)
+// แล้ว normalize ให้เป็นโครงเดียวกันก่อน render
+// ══════════════════════════════════════════════════════════
+let stockCardReturnPage = 'stocklist';
+let stockCardCtx = null;
+
+function goToStockCard(ticker, market, kind) {
+  stockCardReturnPage = currentPage;
+  stockCardCtx = { ticker, market, kind };
+  switchPage('stockcard');
+
+  const el = document.getElementById('stockcard-content');
+  el.innerHTML = '<div class="spin-wrap"><div class="spinner"></div></div>';
+
+  if (kind === 'watch') {
+    const w = (watchlistState.items || []).find(x => x.ticker === ticker && x.market === market) || {};
+    google.script.run
+      .withSuccessHandler(d => renderStockCard(_normalizeWatchForCard(d)))
+      .withFailureHandler(e => renderStockCard({ success:false, error: e.message }))
+      .getWatchlistAnalysis(ticker, market, w.targetPrice || 0, w.supportPrice != null ? w.supportPrice : null);
+  } else {
+    google.script.run
+      .withSuccessHandler(d => renderStockCard(_normalizeHoldingForCard(d)))
+      .withFailureHandler(e => renderStockCard({ success:false, error: e.message }))
+      .getStockDetailData(ticker, market);
+  }
+}
+
+function backFromStockCard() {
+  switchPage(stockCardReturnPage || 'stocklist');
+}
+
+function _normalizeHoldingForCard(d) {
+  if (!d || !d.success) return { success:false, error: (d && d.error) || 'วิเคราะห์ไม่สำเร็จ' };
+  const isFast = d.lane === 'fast';
+  return {
+    success: true, ticker: d.ticker, market: d.market, cur: d.cur,
+    price: isFast ? d.hero.price : d.positionSummary.currentPrice,
+    changePct: isFast ? d.hero.plPct : d.positionSummary.returnPct,
+    changeLabel: 'กำไร/ขาดทุนจากต้นทุน',
+    rsi: isFast ? d.hero.rsi : null,
+    trend: isFast ? d.hero.trend : null,
+    badgeLabel: isFast ? d.hero.actionLabel : d.hero.decision,
+    badgeCls: isFast ? (d.hero.action === 'buy' ? 'safe' : d.hero.action === 'sell' ? 'stop' : 'warn') : d.hero.decisionClass,
+    strategyLabel: isFast ? '⚡ Fast Trade' : '📊 Portfolio',
+    reasons: (d.recommendation && d.recommendation.reasons) || [],
+    warnings: (d.recommendation && d.recommendation.warnings) || [],
+    updatedAt: d.updatedAt, chartTicker: d.ticker
+  };
+}
+
+function _normalizeWatchForCard(d) {
+  if (!d || !d.success) return { success:false, error: (d && d.error) || 'วิเคราะห์ไม่สำเร็จ' };
+  const recoMap = {
+    safe: { label: 'ซื้อได้', cls: 'safe' },
+    warn: { label: 'รอสัญญาณเพิ่ม', cls: 'warn' },
+    stop: { label: 'ยังไม่ควรซื้อ', cls: 'stop' }
+  };
+  const reco = recoMap[d.decClass] || recoMap.warn;
+  return {
+    success: true, ticker: d.ticker, market: d.market, cur: d.cur,
+    price: d.price, changePct: d.diffFromTargetPct, changeLabel: 'จาก Buy Zone',
+    rsi: null,
+    trend: { label: d.trendClass === 'safe' ? 'Uptrend' : d.trendClass === 'stop' ? 'Downtrend' : 'Sideway', cls: d.trendClass },
+    badgeLabel: reco.label, badgeCls: reco.cls, strategyLabel: '⭐ Watchlist',
+    reasons: d.reasons || [], warnings: d.warnings || [],
+    updatedAt: d.updatedAt || '', chartTicker: d.ticker
+  };
+}
+
+function renderStockCard(d) {
+  const el = document.getElementById('stockcard-content');
+  if (!d || !d.success) {
+    el.innerHTML = `<button class="an-back" onclick="backFromStockCard()">← กลับ</button><div class="empty-msg">❌ ${(d && d.error) || 'วิเคราะห์ไม่สำเร็จ'}</div>`;
+    return;
+  }
+  const flag = d.market === 'TH' ? '🇹🇭' : '🇺🇸';
+  const hasChg = d.changePct !== null && d.changePct !== undefined;
+  const chgTxt = hasChg ? `${d.changePct >= 0 ? '+' : ''}${d.changePct.toFixed(2)}%` : '—';
+  const moodPillTxt = hasChg ? _pillFromChange(d.changePct) : '';
+
+  const metricsHtml = (d.rsi !== null || d.trend) ? `
+<div class="sd-hero-metrics">
+  ${d.rsi !== null ? `<div class="sd-hero-metric">
+    <div class="sd-hero-metric-lbl">RSI (14)</div>
+    <div class="sd-hero-metric-val ${d.rsi >= 70 ? 'warn' : (d.rsi <= 30 ? 'stop' : 'safe')}">${d.rsi.toFixed(1)}</div>
+  </div>` : ''}
+  ${d.trend ? `<div class="sd-hero-metric">
+    <div class="sd-hero-metric-lbl">แนวโน้ม</div>
+    <div class="sd-hero-metric-val ${d.trend.cls}">${d.trend.label}</div>
+  </div>` : ''}
+</div>` : '';
+
+  const mood = _moodFromCard(d);
+
+  const reasonsHtml = (d.reasons || []).map(r => `<div class="reason-item"><span class="ic">✅</span><span>${r}</span></div>`).join('')
+    + (d.warnings || []).map(w => `<div class="warn-item"><span class="ic">⚠️</span><span>${w}</span></div>`).join('');
+
+  el.innerHTML = `
+<button class="an-back" onclick="backFromStockCard()">← กลับ</button>
+
+<div class="sd-hero">
+  <div class="sd-hero-top">
+    <span class="sd-hero-ticker">${flag} ${d.ticker}</span>
+    <span class="sd-hero-badge ${d.badgeCls}">${d.badgeLabel}</span>
+  </div>
+  <div class="sd-hero-price">${fmtNum(d.price, d.cur, '', 2)}</div>
+  <div class="sd-hero-sub">${chgTxt} · ${d.changeLabel} · ${d.strategyLabel}</div>
+  ${moodPillTxt ? `<div class="sc-mood-pill">${moodPillTxt}</div>` : ''}
+  ${metricsHtml}
+</div>
+
+<div class="sc-mood-card ${mood.cls}">
+  <div class="sc-mood-icon">${mood.icon}</div>
+  <div>
+    <div class="sc-mood-lbl">${mood.lbl}</div>
+    <div class="sc-mood-val">${mood.val}</div>
+  </div>
+</div>
+
+<div id="sc-quote-extras">${_loadingCardHTML('📊 ข้อมูลราคาเพิ่มเติม')}</div>
+
+<div id="sc-candle-chart" class="an-card" style="padding:14px 16px"></div>
+
+${d.rsi !== null ? buildRsiGauge(d.rsi) : ''}
+
+<div class="an-card">
+  <div class="an-section-lbl">⭐ สรุปสัญญาณ (Key Takeaways)</div>
+  ${reasonsHtml || '<div class="empty-msg" style="padding:8px 0">ไม่มีข้อมูลเพิ่มเติม</div>'}
+  <div class="sc-quote-box">${_quoteFromBadge(d.badgeCls)}</div>
+</div>
+
+<div class="an-timestamp">อัปเดตล่าสุด: ${d.updatedAt || '—'}</div>`;
+
+  _loadHourlyCandleChart(d.chartTicker, d.market);
+  _loadStockCardQuoteExtras(d.chartTicker, d.market);
+}
+
+// ── ป้าย mood สั้นๆ ใต้ราคา อิงจาก %เปลี่ยนแปลง ──
+function _pillFromChange(pct) {
+  if (pct >= 5)  return '🚀 พุ่งแรง!';
+  if (pct >= 2)  return '📈 ไปได้สวย';
+  if (pct <= -5) return '🔻 ร่วงแรง!';
+  if (pct <= -2) return '📉 ปรับตัวลง';
+  return '➖ ทรงตัว';
+}
+
+// ── การ์ด Market Mood — ใช้ trend ถ้ามี ไม่งั้น fallback ไปตาม badge หลัก ──
+function _moodFromCard(d) {
+  if (d.trend) {
+    if (d.trend.cls === 'safe') return { icon:'📈', lbl:'Market Mood', val:'Strong Uptrend', cls:'safe' };
+    if (d.trend.cls === 'stop') return { icon:'📉', lbl:'Market Mood', val:'Strong Downtrend', cls:'stop' };
+    return { icon:'➖', lbl:'Market Mood', val:'Sideway / Neutral', cls:'warn' };
+  }
+  if (d.badgeCls === 'safe') return { icon:'📈', lbl:'Market Mood', val:'แนวโน้มเป็นบวก', cls:'safe' };
+  if (d.badgeCls === 'stop') return { icon:'📉', lbl:'Market Mood', val:'แนวโน้มเป็นลบ', cls:'stop' };
+  return { icon:'➖', lbl:'Market Mood', val:'ยังไม่ชัดเจน', cls:'warn' };
+}
+
+// ── ข้อความปิดท้าย Key Takeaways ตาม badge ──
+function _quoteFromBadge(cls) {
+  if (cls === 'safe') return '“ จังหวะดูน่าสนใจ — แต่ยังต้องคุมความเสี่ยงตามแผนเดิมเสมอ ”';
+  if (cls === 'stop') return '“ มีสัญญาณเตือน — ทบทวนแผนก่อนตัดสินใจเพิ่ม ”';
+  return '“ ยังไม่มีสัญญาณชัดเจน — เฝ้าดูต่อไปก่อน ”';
+}
+
+// ── RSI Gauge แบบครึ่งวงกลม ──
+function buildRsiGauge(rsi) {
+  const arcLen = Math.PI * 70; // ความยาวครึ่งวงกลม r=70
+  const pct = Math.max(0, Math.min(100, rsi)) / 100;
+  const dashOffset = arcLen * (1 - pct);
+  const color = rsi >= 70 ? 'var(--stop)' : (rsi <= 30 ? 'var(--warn)' : 'var(--safe)');
+  const label = rsi >= 70 ? 'ใกล้โซน Overbought' : (rsi <= 30 ? 'ใกล้โซน Oversold' : 'อยู่ในโซนกลาง');
+
+  return `
+<div class="an-card">
+  <div class="an-section-lbl">🧭 RSI (14)</div>
+  <div class="sc-rsi-wrap">
+    <svg width="180" height="100" viewBox="0 0 180 100">
+      <path d="M 20 90 A 70 70 0 0 1 160 90" fill="none" stroke="var(--card2)" stroke-width="14" stroke-linecap="round"/>
+      <path d="M 20 90 A 70 70 0 0 1 160 90" fill="none" stroke="${color}" stroke-width="14" stroke-linecap="round"
+        stroke-dasharray="${arcLen.toFixed(1)}" stroke-dashoffset="${dashOffset.toFixed(1)}"/>
+    </svg>
+    <div class="sc-rsi-val" style="color:${color}">${rsi.toFixed(1)}</div>
+    <div class="sc-rsi-sub">${label}</div>
+  </div>
+</div>`;
+}
+
+
+//(loader + SVG builder)
+function _loadHourlyCandleChart(ticker, market) {
+  const el = document.getElementById('sc-candle-chart');
+  if (!el) return;
+  el.innerHTML = '<div style="text-align:center;padding:30px 0"><div class="spinner" style="display:inline-block;width:22px;height:22px"></div></div>';
+
+  google.script.run
+    .withSuccessHandler(d => {
+      if (!d || !d.success || !d.bars || d.bars.length < 5) {
+        el.innerHTML = `<div class="empty-msg" style="padding:16px 0;font-size:12.5px">${(d && d.error) || 'ไม่มีข้อมูลกราฟรายชั่วโมง'}</div>`;
+        return;
+      }
+      el.innerHTML = buildCandlestickChart(d);
+    })
+    .withFailureHandler(() => {
+      el.innerHTML = `<div class="empty-msg" style="padding:16px 0;font-size:12.5px">โหลดกราฟไม่สำเร็จ</div>`;
+    })
+    .getHourlyCandleData(ticker, market);
+}
+
+// ── SVG แท่งเทียน + เส้น MA5(เหลือง)/MA10(ส้ม)/MA20(ม่วง) + ป้ายราคาล่าสุด ──
+function buildCandlestickChart(d) {
+  const bars = d.bars, n = bars.length;
+  const W = 340, H = 220, padL = 6, padR = 54, padT = 10, padB = 22;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+
+  let lo = Math.min(...bars.map(b => b.l));
+  let hi = Math.max(...bars.map(b => b.h));
+  [d.ma5, d.ma10, d.ma20].forEach(ma => (ma || []).forEach(v => {
+    if (v !== null && v !== undefined) { if (v < lo) lo = v; if (v > hi) hi = v; }
+  }));
+  const range = (hi - lo) || 1;
+  const yPad = range * 0.06;
+  lo -= yPad; hi += yPad;
+
+  const xStep = plotW / n;
+  const candleW = Math.min(xStep * 0.62, 10);
+  const xAt = i => padL + xStep * i + xStep / 2;
+  const yAt = v => padT + plotH - ((v - lo) / (hi - lo)) * plotH;
+
+  let candlesSvg = '';
+  bars.forEach((b, i) => {
+    const x = xAt(i);
+    const up = b.c >= b.o;
+    const color = up ? 'var(--safe)' : 'var(--stop)';
+    const yHigh = yAt(b.h), yLow = yAt(b.l), yO = yAt(b.o), yC = yAt(b.c);
+    const bodyTop = Math.min(yO, yC), bodyH = Math.max(Math.abs(yC - yO), 1.2);
+    candlesSvg += `<line x1="${x.toFixed(1)}" y1="${yHigh.toFixed(1)}" x2="${x.toFixed(1)}" y2="${yLow.toFixed(1)}" stroke="${color}" stroke-width="1"/>`;
+    candlesSvg += `<rect x="${(x - candleW/2).toFixed(1)}" y="${bodyTop.toFixed(1)}" width="${candleW.toFixed(1)}" height="${bodyH.toFixed(1)}" fill="${color}"/>`;
+  });
+
+  function maPath(ma, color) {
+    if (!ma) return '';
+    let segs = [], cur = [];
+    ma.forEach((v, i) => {
+      if (v === null || v === undefined) { if (cur.length > 1) segs.push(cur); cur = []; }
+      else cur.push([xAt(i), yAt(v)]);
+    });
+    if (cur.length > 1) segs.push(cur);
+    return segs.map(seg => `<polyline points="${seg.map(p => p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ')}" fill="none" stroke="${color}" stroke-width="1.4"/>`).join('');
+  }
+  const maSvg = maPath(d.ma5, '#FBBF24') + maPath(d.ma10, '#F97316') + maPath(d.ma20, '#A78BFA');
+
+  const priceLabels = [hi - yPad, (hi + lo) / 2, lo + yPad].map(v =>
+    `<text x="${W - padR + 6}" y="${(yAt(v)+3).toFixed(1)}" font-size="9" fill="rgba(255,255,255,.5)">${fmtNum(v,'','',0)}</text>`
+  ).join('');
+
+  const timeIdxs = [0, Math.floor(n/2), n-1];
+  const timeLabels = timeIdxs.map((i, idx) => {
+    const parts = bars[i].time.split(' ');
+    const label = idx === 0 ? parts[0] : (parts[1] || parts[0]);
+    return `<text x="${xAt(i).toFixed(1)}" y="${H-6}" font-size="9" fill="rgba(255,255,255,.5)" text-anchor="middle">${label}</text>`;
+  }).join('');
+
+  const lastPrice = bars[n-1].c;
+  const yLast = yAt(lastPrice);
+  const lastLine = `
+<line x1="${padL}" y1="${yLast.toFixed(1)}" x2="${W-padR}" y2="${yLast.toFixed(1)}" stroke="rgba(255,255,255,.3)" stroke-width="1" stroke-dasharray="3,3"/>
+<rect x="${W-padR}" y="${(yLast-8).toFixed(1)}" width="${padR-4}" height="16" rx="4" fill="var(--purple)"/>
+<text x="${W-padR+(padR-4)/2}" y="${(yLast+3).toFixed(1)}" font-size="9" font-weight="800" fill="#fff" text-anchor="middle">${fmtNum(lastPrice,'','',0)}</text>`;
+
+  const chgPct = d.changePct;
+  const chgTxt = (chgPct !== null && chgPct !== undefined) ? `${chgPct >= 0 ? '+' : ''}${chgPct.toFixed(2)}%` : '—';
+  const chgCls = (chgPct !== null && chgPct >= 0) ? 'pos' : 'neg';
+
+  return `
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+  <div style="font-size:12px;font-weight:700;color:var(--dim)">${d.timeframe || '1 ชม.'}</div>
+  <span class="hpct-badge ${chgCls}">${chgTxt}</span>
+</div>
+<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block">
+  ${priceLabels}${candlesSvg}${maSvg}${lastLine}${timeLabels}
+</svg>
+<div style="display:flex;gap:12px;margin-top:6px;font-size:11px;color:var(--muted);font-weight:700">
+  <span style="color:#FBBF24">● MA5</span>
+  <span style="color:#F97316">● MA10</span>
+  <span style="color:#A78BFA">● MA20</span>
+</div>`;
+}
+
+
+// ══════════════════════════════
+// โหลดแบบ **แยกยิง async ไม่บล็อกหน้าจอ สรุปสัญญาณ/กราฟจะขึ้นก่อน แล้ว H/L, volume, market cap ตามมาทีหลัง
+// **Market Cap cache ไว้ 15 นาที** ต่อ symbol กัน hit crumb ถี่เกิน (เสี่ยง rate limit ที่สุดในระบบนี้) — H/L/Volume/After-hours 
+// ไม่ cache เพราะเปลี่ยนทุกวินาทีอยู่แล้ว และไม่ต้อง auth ก็ไม่หนัก
+// ถ้า crumb ล้มเหลว (Yahoo บล็อก/หมดอายุ) การ์ดจะยังโชว์ H/L, ปริมาณ, 52wk ได้ปกติ แค่ไม่มี Market Cap — ไม่ทำให้ทั้งหน้าพัง
+// ══════════════════════════════
+function _loadStockCardQuoteExtras(ticker, market) {
+  const el = document.getElementById('sc-quote-extras');
+  if (!el) return;
+
+  google.script.run
+    .withSuccessHandler(q => {
+      if (!q || !q.success) {
+        el.innerHTML = `<div class="an-card"><div class="an-section-lbl">📊 ข้อมูลราคาเพิ่มเติม</div>
+<div class="empty-msg" style="padding:10px 0;font-size:12.5px">${(q && q.error) || 'ไม่พบข้อมูลเพิ่มเติม'}</div></div>`;
+        return;
+      }
+      const cur = market === 'TH' ? '฿' : '$';
+      const rows = [];
+      if (q.dayHigh && q.dayLow) rows.push(['ช่วงราคา (H/L)', `${fmtNum(q.dayLow,cur,'',2)} - ${fmtNum(q.dayHigh,cur,'',2)}`]);
+      if (q.volume) rows.push(['ปริมาณ', _fmtCompactNum(q.volume)]);
+      if (q.marketCap) rows.push(['มูลค่าตลาด', cur + _fmtCompactNum(q.marketCap)]);
+      if (q.fiftyTwoWeekHigh && q.fiftyTwoWeekLow) rows.push(['52 สัปดาห์ (H/L)', `${fmtNum(q.fiftyTwoWeekLow,cur,'',2)} - ${fmtNum(q.fiftyTwoWeekHigh,cur,'',2)}`]);
+
+      const rowsHtml = rows.map(([lbl,val]) =>
+        `<div class="an-stat"><span class="an-stat-lbl">${lbl}</span><span class="an-stat-val">${val}</span></div>`
+      ).join('');
+
+      const afterHoursHtml = q.afterHours ? `
+<div class="empty-msg" style="text-align:left;padding:10px 0 0;font-size:12.5px">
+  🌙 หลังเวลาตลาด: ${fmtNum(q.afterHours.price, cur, '', 2)}
+  ${q.afterHours.changePct !== null ? ` (${q.afterHours.changePct >= 0 ? '+' : ''}${q.afterHours.changePct.toFixed(2)}%)` : ''}
+  ${q.afterHours.time ? ' · ' + q.afterHours.time : ''}
+</div>` : '';
+
+      el.innerHTML = `
+<div class="an-card">
+  <div class="an-section-lbl">📊 ข้อมูลราคาเพิ่มเติม${q.exchangeName ? ' · ' + q.exchangeName : ''}</div>
+  <div class="an-stat-grid">${rowsHtml || '<div class="empty-msg" style="padding:6px 0;font-size:12.5px">ไม่มีข้อมูลเพิ่มเติม</div>'}</div>
+  ${afterHoursHtml}
+</div>`;
+    })
+    .withFailureHandler(() => {
+      el.innerHTML = `<div class="an-card"><div class="an-section-lbl">📊 ข้อมูลราคาเพิ่มเติม</div>
+<div class="empty-msg" style="padding:10px 0;font-size:12.5px">โหลดไม่สำเร็จ</div></div>`;
+    })
+    .getStockQuoteExtras(ticker, market);
+}
+
+// ── ย่อเลขให้อ่านง่าย เช่น ปริมาณ/มูลค่าตลาด: 260880000000 → 260.88B ──
+function _fmtCompactNum(n) {
+  n = Number(n) || 0;
+  if (n >= 1e12) return (n / 1e12).toFixed(2) + 'T';
+  if (n >= 1e9)  return (n / 1e9 ).toFixed(2) + 'B';
+  if (n >= 1e6)  return (n / 1e6 ).toFixed(2) + 'M';
+  if (n >= 1e3)  return (n / 1e3 ).toFixed(2) + 'K';
+  return n.toFixed(0);
+}
 
 
 // ══════════════════════════════
