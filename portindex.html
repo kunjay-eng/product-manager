@@ -7962,6 +7962,7 @@ function _normalizeHoldingForCard(d) {
     strategyLabel: isFast ? '⚡ Fast Trade' : '📊 Portfolio',
     reasons: (d.recommendation && d.recommendation.reasons) || [],
     warnings: (d.recommendation && d.recommendation.warnings) || [],
+    pivot: d.pivot || null,   // ← เพิ่ม: { available, pivot, resistance:{r1,r2,r3}, support:{s1,s2,s3}, ... }
     updatedAt: d.updatedAt, chartTicker: d.ticker
   };
 }
@@ -7981,9 +7982,11 @@ function _normalizeWatchForCard(d) {
     trend: { label: d.trendClass === 'safe' ? 'Uptrend' : d.trendClass === 'stop' ? 'Downtrend' : 'Sideway', cls: d.trendClass },
     badgeLabel: reco.label, badgeCls: reco.cls, strategyLabel: '⭐ Watchlist',
     reasons: d.reasons || [], warnings: d.warnings || [],
+    pivot: d.pivot || null,   // ← เพิ่ม: มาจาก _wlCalcPivotLevels() ใน getWatchlistAnalysis()
     updatedAt: d.updatedAt || '', chartTicker: d.ticker
   };
 }
+
 
 function renderStockCard(d) {
   const el = document.getElementById('stockcard-content');
@@ -8040,6 +8043,7 @@ function renderStockCard(d) {
 <div id="sc-candle-chart" class="an-card" style="padding:14px 16px"></div>
 
 ${d.rsi !== null ? buildRsiGauge(d.rsi) : ''}
+${buildPivotCard(d.pivot, d.cur)}
 
 <div class="an-card">
   <div class="an-section-lbl">⭐ สรุปสัญญาณ (Key Takeaways)</div>
@@ -8101,6 +8105,50 @@ function buildRsiGauge(rsi) {
     <div class="sc-rsi-val" style="color:${color}">${rsi.toFixed(1)}</div>
     <div class="sc-rsi-sub">${label}</div>
   </div>
+</div>`;
+}
+
+// ── การ์ดแนวรับ-แนวต้าน R1-R3 / S1-S3 (Pivot Point) ──
+// ใช้ข้อมูลเดียวกันทั้งหุ้นที่ถือ (getPivotLevels ใน webapp_09) และ Watchlist (_wlCalcPivotLevels ใน webapp_07)
+// เพราะ backend คืนโครงหน้าตาเดียวกัน: { available, pivot, resistance:{r1,r2,r3}, support:{s1,s2,s3}, nearestResistanceLevel, nearestSupportLevel }
+function buildPivotCard(pivot, cur) {
+  if (!pivot) return '';
+  if (!pivot.available) {
+    return `
+<div class="an-card">
+  <div class="an-section-lbl">🎯 แนวรับ - แนวต้าน</div>
+  <div class="empty-msg" style="padding:8px 0;font-size:12.5px">${pivot.reason || 'ยังไม่มีข้อมูลเพียงพอ'}</div>
+</div>`;
+  }
+
+  const row = (label, price, key, nearestKey) => {
+    const isNearest = nearestKey === key;
+    const isRes = key[0] === 'r';
+    const color = isRes ? 'var(--stop)' : 'var(--safe)';
+    return `
+    <div style="display:flex; justify-content:space-between; align-items:center; padding:7px 0; ${isNearest ? 'border-radius:8px; background:var(--card2); padding-left:8px; padding-right:8px;' : ''}">
+      <span style="font-size:12.5px; font-weight:700; color:${color}">${label}${isNearest ? ' · ใกล้สุด' : ''}</span>
+      <span style="font-size:14px; font-weight:800; color:${color}">${fmtNum(price, cur, '', 2)}</span>
+    </div>`;
+  };
+
+  const nR = pivot.nearestResistanceLevel ? pivot.nearestResistanceLevel.key : null;
+  const nS = pivot.nearestSupportLevel ? pivot.nearestSupportLevel.key : null;
+
+  return `
+<div class="an-card">
+  <div class="an-section-lbl">🎯 แนวรับ - แนวต้าน</div>
+  ${row('แนวต้าน R3', pivot.resistance.r3, 'r3', nR)}
+  ${row('แนวต้าน R2', pivot.resistance.r2, 'r2', nR)}
+  ${row('แนวต้าน R1', pivot.resistance.r1, 'r1', nR)}
+  <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; margin:2px 0; border-top:1px dashed var(--card2); border-bottom:1px dashed var(--card2)">
+    <span style="font-size:12px; color:var(--muted); font-weight:700">Pivot</span>
+    <span style="font-size:13.5px; font-weight:800; color:var(--muted)">${fmtNum(pivot.pivot, cur, '', 2)}</span>
+  </div>
+  ${row('แนวรับ S1', pivot.support.s1, 's1', nS)}
+  ${row('แนวรับ S2', pivot.support.s2, 's2', nS)}
+  ${row('แนวรับ S3', pivot.support.s3, 's3', nS)}
+  ${pivot.baseDate ? `<div style="font-size:11px; color:var(--muted); margin-top:6px">อ้างอิงจาก High/Low/Close วันที่ ${pivot.baseDate}</div>` : ''}
 </div>`;
 }
 
