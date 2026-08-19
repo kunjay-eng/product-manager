@@ -8333,22 +8333,27 @@ function renderCompareDashboard(res) {
   const holdItems = items.filter(it => it.investmentResult);
   let irHtml = '';
   if (holdItems.length) {
-    const rowDef = [
+const rowDef = [
   ['เงินลงทุน', it => fmtNum(it.investmentResult.capitalNative, it.cur, '', 2)],
-  ['Price Return', it => `${it.investmentResult.priceReturnPct >= 0 ? '+' : ''}${it.investmentResult.priceReturnPct.toFixed(1)}%`],
-  ['Dividend', it => '+' + fmtNum(it.investmentResult.dividendNative, it.cur, '', 2)],
- ['FX Gain/Loss', it => it.investmentResult.fxGainLossTHB === null ? '—' : (it.investmentResult.fxGainLossTHB >= 0 ? '+' : '') + fmtNum(it.investmentResult.fxGainLossTHB, '฿', '', 2),
-  '_FXGainLoss'],
+ ['Price Return', it => `${it.investmentResult.priceReturnPct >= 0 ? '+' : ''}${it.investmentResult.priceReturnPct.toFixed(1)}%`, '_PriceReturn'],
 
+  ['Dividend', it => '+' + fmtNum(it.investmentResult.dividendNative, it.cur, '', 2)],
+  ['FX Gain/Loss', it => it.investmentResult.fxGainLossTHB === null ? '—' : (it.investmentResult.fxGainLossTHB >= 0 ? '+' : '') + fmtNum(it.investmentResult.fxGainLossTHB, '฿', '', 2),
+  '_FXGainLoss'],
   ['Fees', it => fmtNum(it.investmentResult.feeNative, it.cur, '', 2)],
   ['Total Return (฿)', it => (it.investmentResult.totalReturnTHB >= 0 ? '+' : '') + fmtNum(it.investmentResult.totalReturnTHB, '฿', '', 2)]
 ];
 
-    irHtml = `
+
+  irHtml = `
 <div class="an-card" style="margin-top:12px">
   <div class="an-section-lbl">💰 Investment Result</div>
   <div class="cmp-ir-table">
- ${rowDef.map(([label, fn, tipKey], ri) => `
+    <div class="cmp-ir-row cmp-ir-head">
+      <div class="cmp-ir-label"></div>
+      ${holdItems.map(it => `<div class="cmp-ir-col" style="color:${it.color}">${it.ticker}</div>`).join('')}
+    </div>
+${rowDef.map(([label, fn, tipKey], ri) => `
 <div class="cmp-ir-row ${ri === rowDef.length - 1 ? 'cmp-ir-total' : ''}">
   <div class="cmp-ir-label">${label}${tipKey ? infoIcon(tipKey) : ''}</div>
   <div class="cmp-ir-vals">
@@ -8359,7 +8364,6 @@ function renderCompareDashboard(res) {
 
   </div>
 </div>`;
-
   }
 
   const failedNote = failed.length ? `<div class="cmp-note">ไม่มีข้อมูล: ${failed.map(f => `${f.ticker} (${f.reason})`).join(', ')}</div>` : '';
@@ -10406,14 +10410,25 @@ _RS: {
     body: 'หุ้นที่ราคาตลาดต่ำกว่ามูลค่าพื้นฐานที่ควรจะเป็น มักมีค่า P/E หรือ P/BV ต่ำเมื่อเทียบกับค่าเฉลี่ย<br><br>' +
       '<b>ลักษณะ:</b> บริษัทพื้นฐานดี แต่ราคาหุ้นอาจยังไม่สะท้อนมูลค่าที่แท้จริง<br><br>' +
       '💡 <b>วิธีใช้บนการ์ด:</b> เน้นซื้อหุ้นที่ราคาต่ำกว่ามูลค่าพื้นฐาน'
-  }
+  },
 
-  _FXGainLoss: {
+  _PriceReturn: {
+  title: 'Price Return',
+  body: '% กำไร/ขาดทุนของ<b>หุ้นที่ถืออยู่ตอนนี้</b> เทียบราคาปัจจุบันกับต้นทุนเฉลี่ย (Unrealized)<br><br>' +
+        'ไม่รวมปันผล ค่าธรรมเนียม กำไร/ขาดทุนจากอัตราแลกเปลี่ยน หรือกำไรที่ขายทำไปแล้วก่อนหน้า<br>' +
+        '💡 ดูเฉพาะ "ราคาหุ้นเปลี่ยนไปกี่ %" ล้วนๆ — ผลตอบแทนรวมจริงดูที่แถว Total Return (฿) ด้านล่าง'
+},
+
+
+
+    _FXGainLoss: {
   title: 'FX Gain/Loss',
   body: 'กำไร/ขาดทุนจากอัตราแลกเปลี่ยน เทียบอัตราตอนซื้อกับอัตราวันนี้ (เฉพาะหุ้น US)<br><br>' +
         'แสดงเป็น <b>฿ เสมอ</b> เพราะเป็นมูลค่าที่เพิ่ม/ลดตอนแปลงกลับเป็นเงินบาท<br>' +
         'ไม่ใช่การเปลี่ยนแปลงของราคาหุ้น $ (ราคาหุ้น $ ไม่เกี่ยวกับอัตราแลกเปลี่ยน)'
 }
+
+
 
   
 };
