@@ -1800,6 +1800,37 @@ body {
 
 
 
+  .cmp-picker-list{ display:flex; flex-direction:column; gap:2px; max-height:260px; overflow-y:auto; margin-bottom:12px; }
+  .cmp-pick-item{ display:flex; align-items:center; gap:10px; padding:9px 4px; font-size:13px; font-weight:600; border-bottom:1px solid var(--card2); }
+  .cmp-pick-item input{ width:18px; height:18px; accent-color:var(--purple); flex-shrink:0; }
+  .cmp-mode-tabs{ display:flex; gap:6px; }
+  .cmp-mode-btn{ flex:1; padding:9px 4px; border-radius:10px; border:none; background:var(--card2); color:var(--muted); font-size:12.5px; font-weight:800; cursor:pointer; }
+  .cmp-mode-btn.active{ background:var(--purple); color:#fff; }
+  .cmp-period-tabs{ display:flex; gap:6px; margin-top:8px; }
+  .cmp-period-btn{ flex:1; padding:7px 2px; border-radius:8px; border:none; background:var(--card2); color:var(--muted); font-size:11.5px; font-weight:800; cursor:pointer; }
+  .cmp-period-btn.active{ background:rgba(139,92,246,.35); color:#fff; }
+  .cmp-legend-list{ display:flex; flex-direction:column; gap:2px; }
+  .cmp-legend-item{ display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--card2); }
+  .cmp-legend-item:last-child{ border-bottom:none; }
+  .cmp-legend-dot{ width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+  .cmp-legend-text{ flex:1; min-width:0; }
+  .cmp-legend-ticker{ font-size:13.5px; font-weight:800; }
+  .cmp-legend-sub{ font-size:11px; color:var(--muted); }
+  .cmp-legend-nums{ text-align:right; }
+  .cmp-legend-pct{ font-size:14px; font-weight:800; }
+  .cmp-legend-cagr{ font-size:10.5px; color:var(--muted); }
+  .cmp-note{ font-size:11px; color:var(--muted); margin-top:8px; }
+.cmp-ir-table{ display:flex; flex-direction:column; }
+.cmp-ir-row{ display:flex; flex-direction:column; gap:6px; padding:9px 0; border-bottom:1px solid var(--card2); }
+.cmp-ir-row:last-child{ border-bottom:none; }
+.cmp-ir-head{ font-size:11px; color:var(--muted); font-weight:800; }
+.cmp-ir-label{ font-size:11.5px; color:var(--muted); font-weight:700; }
+.cmp-ir-vals{ display:flex; flex-wrap:wrap; column-gap:16px; row-gap:4px; }
+.cmp-ir-val{ display:flex; align-items:baseline; gap:5px; white-space:nowrap; }
+.cmp-ir-val-tick{ font-size:10.5px; font-weight:800; }
+.cmp-ir-col{ font-size:12.5px; font-weight:800; text-align:right; }
+.cmp-ir-total .cmp-ir-label, .cmp-ir-total .cmp-ir-col{ color:var(--text); font-size:13.5px; }
+.cmp-ir-total{ border-top:1px solid var(--card2); margin-top:2px; padding-top:10px; }
 
 
 
