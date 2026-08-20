@@ -759,12 +759,14 @@ body {
 .wbtn.remove  { flex: 0 0 44px; background: var(--stop-bg); color: var(--stop); font-size: 16px; }
 .wbtn:active { opacity: .75; }
 
+
 /* ── modal ยืนยันลบ / แก้โน้ต (ใช้ร่วมกัน) ── */
-#confirm-overlay, #note-overlay {
+#confirm-overlay, #int-confirm-overlay, #legcancel-overlay, #note-overlay {
   position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 60;
   display: flex; align-items: center; justify-content: center; padding: 24px;
 }
 #note-overlay { align-items: flex-end; }
+
 .confirm-box { background: var(--surface); border-radius: 20px; padding: 22px 20px; max-width: 340px; width: 100%; box-shadow: 0 12px 40px rgba(0,0,0,.5); }
 #note-overlay .confirm-box { border-radius: 20px 20px 0 0; max-width: 430px; padding-bottom: 28px; }
 .confirm-icon { font-size: 32px; text-align: center; margin-bottom: 10px; }
@@ -1831,11 +1833,6 @@ body {
 .cmp-ir-col{ font-size:12.5px; font-weight:800; text-align:right; }
 .cmp-ir-total .cmp-ir-label, .cmp-ir-total .cmp-ir-col{ color:var(--text); font-size:13.5px; }
 .cmp-ir-total{ border-top:1px solid var(--card2); margin-top:2px; padding-top:10px; }
-
-
-
-
-
 
 
 </style>
