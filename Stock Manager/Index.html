@@ -1373,9 +1373,13 @@
 </div>
 <div class="field" id="avgcost-pct-row" style="display:none">
   <label>% จากราคาปิด (ติดลบ = ซื้อต่ำกว่าราคาปิด)</label>
-  <input type="number" id="avgcost-pct-input" placeholder="-10" step="0.5" inputmode="decimal" oninput="_avgCostApplyPct()">
-  <div class="field-hint">💡 ปรับ % แล้วช่องราคาที่จะซื้อด้านล่างจะคำนวณให้อัตโนมัติ — แก้ราคาเองทับได้ทุกเมื่อ</div>
+  <div style="display:flex; gap:8px">
+    <button type="button" onclick="_avgCostTogglePctSign()" aria-label="สลับ +/-" style="flex:0 0 46px; border-radius:10px; border:1px solid var(--card2); background:var(--card2); color:var(--text); font-weight:800; font-size:17px; line-height:1">±</button>
+    <input type="number" id="avgcost-pct-input" placeholder="-10" step="0.5" inputmode="decimal" oninput="_avgCostApplyPct()" style="flex:1">
+  </div>
+  <div class="field-hint">💡 ปรับ % แล้วช่องราคาที่จะซื้อด้านล่างจะคำนวณให้อัตโนมัติ — แก้ราคาเองทับได้ทุกเมื่อ<br>คีย์บอร์ดมือถือบางรุ่นไม่มีปุ่มลบ กดปุ่ม <b>±</b> ด้านซ้ายเพื่อสลับ +/− แทนได้</div>
 </div>
+
 <div class="field">
   <label id="avgcost-price-label">ราคาที่จะซื้อ (ต่อหุ้น)</label>
   <input type="number" id="avgcost-add-price" placeholder="0.00" step="0.01" inputmode="decimal" onblur="_roundInputField(this)">
@@ -3275,6 +3279,16 @@ function _avgCostApplyPct() {
   const price = avgCostCtx.closePrice * (1 + pct / 100);
   document.getElementById('avgcost-add-price').value = price > 0 ? price.toFixed(2) : '0.00';
 }
+
+
+// สลับ +/− ให้ช่อง % จากราคาปิด — เผื่อคีย์บอร์ดตัวเลขของมือถือบางรุ่นไม่มีปุ่มลบ (-)
+function _avgCostTogglePctSign() {
+  const pctInput = document.getElementById('avgcost-pct-input');
+  const cur = parseFloat(pctInput.value);
+  pctInput.value = (isNaN(cur) || cur === 0) ? '-10' : (-cur).toString();
+  _avgCostApplyPct();
+}
+
 
 
 function closeAvgCostCalculator() {
@@ -5346,11 +5360,13 @@ function renderSignalCards() {
       : (it.held ? `<span class="held">ถืออยู่</span>` : '');
     const urgentNote = it.urgentSell ? '<span>· หลุด Stop Loss แล้ว</span>' : '';
 
-    const reasonsHtml = (it.reasons || []).map(r => `<div class="sig-reason-item"><span class="ic">✅</span><span>${r}</span></div>`).join('')
-      + (it.warnings || []).map(w => `<div class="sig-reason-item"><span class="ic">⚠️</span><span>${w}</span></div>`).join('');
+  // map it.signal (buy/watch/sell/error) → badgeCls (safe/warn/stop) แล้วส่งเข้าฟังก์ชัน mood/quote ที่มีอยู่แล้ว
+const moodBadgeCls = it.signal === 'buy' ? 'safe' : it.signal === 'sell' ? 'stop' : 'warn';
+const mood = _moodFromCard({ badgeCls: moodBadgeCls });
 
-    html += `
+html += `
 <div class="sig-card ${it.signal}">
+
   <div class="sig-top">
     <div class="sig-id">
       <div class="sig-logo" style="background:${logoColor}">${logoLetter}</div>
@@ -5377,11 +5393,16 @@ function renderSignalCards() {
   ${it.held ? `<div style="font-size:11px; color:rgba(255,255,255,.5); margin-top:4px">⚡ สัญญาณเทคนิค — ไม่ได้พิจารณาตามสัดส่วนของพอร์ตที่ถืออยู่ --> หน้า Rebalance </div>` : ''}
 
 
-  <div class="sig-reasons">
-    <div class="sig-reason-lbl">เหตุผล</div>
-    ${reasonsHtml || '<div class="empty-msg" style="padding:4px 0;text-align:left">ไม่มีข้อมูลเพิ่มเติม</div>'}
+  <div class="sc-mood-card ${mood.cls}" style="margin-top:12px">
+    <div class="sc-mood-icon">${mood.icon}</div>
+    <div>
+      <div class="sc-mood-lbl">${mood.lbl}</div>
+      <div class="sc-mood-val">${mood.val}</div>
+    </div>
   </div>
-    <div style="display:flex; gap:8px; margin-top:12px">
+  <div class="sc-quote-box" style="margin-top:8px">${_quoteFromBadge(moodBadgeCls)}</div>
+  <div style="display:flex; gap:8px; margin-top:12px">
+
     <button class="wbtn ghost" style="flex:0 0 44px" onclick="backfillWatchlistTickerHistory('${it.ticker}','${it.market}', this)" title="ดึงราคาย้อนหลัง 6 เดือน">📥</button>
     <button class="wbtn primary" style="flex:1" onclick="goToStockDetail('${it.ticker}','${it.market}')">📊 วิเคราะห์</button>
   </div>
@@ -7579,26 +7600,31 @@ function renderWatchlist() {
 // ── โหลด Trend ของแต่ละการ์ดทีหลัง (lazy) — ไม่บล็อกการแสดงผลรายการหลัก
 //    หน่วง 400ms ต่อตัวกันยิง Yahoo ถี่เกินไป (แพตเทิร์นเดียวกับ Utilities.sleep
 //    ที่ backend ใช้อยู่แล้วในหลายจุด) ──
+// ผลลัพธ์ ── จาก N รอบ round-trip เรียงคิว (แต่ละรอบหนักเพราะดึง 1 ปี + คำนวณเต็มชุด) เหลือ**รอบเดียว** ที่ยิง Yahoo ขนานกันทั้งหมดฝั่ง backend — เร็วขึ้นชัดเจนโดยเฉพาะเมื่อมีหุ้นในลิสต์เยอะ ตัวการ์ดหลัก/ราคายังโชว์ทันทีเหมือนเดิม (ไม่บล็อก) มีแค่ trend badge ที่ขึ้นเร็วขึ้นมาก
+
 function _loadCardTrends(items) {
-  items.forEach((it, i) => {
-    setTimeout(() => {
-      const slot = document.getElementById('trend_' + it.ticker + '_' + it.market);
-      if (!slot) return;
-      google.script.run
-        .withSuccessHandler(d => {
-          const el = document.getElementById('trend_' + it.ticker + '_' + it.market);
-          if (!el) return;
-          if (!d || !d.success) { el.innerHTML = '<span class="badge" style="background:var(--card2);color:var(--muted)">— ไม่มีข้อมูลเทรนด์</span>'; return; }
-          const label = d.trendClass === 'safe' ? '📈 Uptrend' : d.trendClass === 'stop' ? '📉 Downtrend' : '➖ Sideway';
-          el.innerHTML = `<span class="badge ${d.trendClass}">${label}</span>`;
-        })
-        .withFailureHandler(() => {
-          const el = document.getElementById('trend_' + it.ticker + '_' + it.market);
-          if (el) el.innerHTML = '<span class="badge" style="background:var(--card2);color:var(--muted)">— โหลดเทรนด์ไม่สำเร็จ</span>';
-        })
-        .getWatchlistAnalysis(it.ticker, it.market, it.targetPrice, it.supportPrice);
-    }, i * 400);
-  });
+  if (!items.length) return;
+  const payload = items.map(it => ({ ticker: it.ticker, market: it.market }));
+
+  google.script.run
+    .withSuccessHandler(resultMap => {
+      items.forEach(it => {
+        const key = it.ticker + '_' + it.market;
+        const el = document.getElementById('trend_' + key);
+        if (!el) return;
+        const d = resultMap && resultMap[key];
+        if (!d || !d.success) { el.innerHTML = '<span class="badge" style="background:var(--card2);color:var(--muted)">— ไม่มีข้อมูลเทรนด์</span>'; return; }
+        const label = d.trendClass === 'safe' ? '📈 Uptrend' : d.trendClass === 'stop' ? '📉 Downtrend' : '➖ Sideway';
+        el.innerHTML = `<span class="badge ${d.trendClass}">${label}</span>`;
+      });
+    })
+    .withFailureHandler(() => {
+      items.forEach(it => {
+        const el = document.getElementById('trend_' + it.ticker + '_' + it.market);
+        if (el) el.innerHTML = '<span class="badge" style="background:var(--card2);color:var(--muted)">— โหลดเทรนด์ไม่สำเร็จ</span>';
+      });
+    })
+    .getWatchlistTrendsBatch(payload);
 }
 
 
