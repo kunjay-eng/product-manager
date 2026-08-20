@@ -19,6 +19,8 @@ function getSignalOverviewData() {
     const modeMap = getStockModeMap();
     const tickers = Object.keys(modeMap);
     if (!tickers.length) return { success: true, items: [] };
+    
+    _prefetchYahooHistoryBatch(tickers, modeMap);   // ← เพิ่มบรรทัดนี้
 
     // ── เช็คว่าตัวไหนถืออยู่แล้ว (สำหรับ badge "ถืออยู่ X%") ──
     const heldMap = {}; // { TICKER: { unrealizedPct, valueNow } }
@@ -57,7 +59,7 @@ function getSignalOverviewData() {
       if (normalized) items.push(normalized);
 
       // ── กันยิง Yahoo Finance ติดกันถี่เกินไปจนโดนบล็อกชั่วคราว (เหมือนที่ทำใน updateWatchlistPricesWeb) ──
-      if (idx < tickers.length - 1) Utilities.sleep(150);
+      // ลบ if (idx < tickers.length - 1) ;
     });
 
     // เรียงความเร่งด่วน: SELL ที่หลุด stop → SELL อื่นๆ → BUY → WATCH
@@ -70,6 +72,44 @@ function getSignalOverviewData() {
     return { success: false, error: e.message, items: [] };
   }
 }
+
+
+function _prefetchYahooHistoryBatch(tickers, modeMap) {
+  const cache = CacheService.getScriptCache();
+  const requests = [], meta = [];
+
+  tickers.forEach(ticker => {
+    const cfg = modeMap[ticker];
+    const market = (cfg.market === 'ไทย') ? 'TH' : 'US';
+    const symbol = (market === 'TH') ? (ticker.toUpperCase() + '.BK') : ticker.toUpperCase();
+    const range = (cfg.mode === 'Fast') ? '3mo' : '1y';
+    const cacheKey = 'yh_' + symbol + '_' + range;
+    if (cache.get(cacheKey)) return;
+    requests.push({
+      url: 'https://query1.finance.yahoo.com/v8/finance/chart/' + encodeURIComponent(symbol) + '?interval=1d&range=' + range,
+      muteHttpExceptions: true,
+      headers: { 'User-Agent': 'Mozilla/5.0' }
+    });
+    meta.push({ cacheKey });
+  });
+
+  if (!requests.length) return;
+
+  let responses;
+  try {
+    responses = UrlFetchApp.fetchAll(requests); // ← ยิงขนานทีเดียวทั้งชุด
+  } catch (e) {
+    logError('_prefetchYahooHistoryBatch:fetchAll', e);
+    return; // ไม่มี cache ก็ไม่พัง — ฟังก์ชันเดิม fallback ไปยิงเองทีละตัวตามปกติ
+  }
+
+  responses.forEach((res, i) => {
+    try {
+      if (res.getResponseCode() === 200) cache.put(meta[i].cacheKey, res.getContentText(), 60);
+    } catch (e) {}
+  });
+}
+
 
 // ── แปลงผลลัพธ์จาก getFastSignal()/getStockAnalysis() ให้เป็นรูปแบบเดียวกัน
 //    สำหรับการ์ดภาพรวม (ทั้งสองฟังก์ชันคืนโครงสร้างต่างกัน ต้อง normalize) ──
