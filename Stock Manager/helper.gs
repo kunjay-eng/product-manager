@@ -332,11 +332,18 @@ function fetchYahooHistory(symbol, days) {
     headers: { "User-Agent": "Mozilla/5.0" }
   };
 
+const cacheKey = 'yh_' + symbol + '_' + range;
+let contentText = CacheService.getScriptCache().get(cacheKey);
+if (!contentText) {
   const resp = fetchWithRetry(url, opts, 3);
   if (!resp) return null;
+  contentText = resp.getContentText();
+}
+
 
   try {
-    const data   = JSON.parse(resp.getContentText());
+    // const data   = JSON.parse(resp.getContentText());
+    const data = JSON.parse(contentText);
     const result = data?.chart?.result?.[0];
     if (!result) return null;
 
