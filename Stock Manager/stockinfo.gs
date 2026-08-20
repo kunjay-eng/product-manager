@@ -54,17 +54,16 @@ function _fetchStockData(ticker) {
     const url = "https://query1.finance.yahoo.com/v8/finance/chart/" +
       ticker + "?interval=1d&range=1y";
 
+//เช็ค cache ก่อนยิงเอง
+const cacheKey = 'yh_' + ticker + '_1y';
+let contentText = CacheService.getScriptCache().get(cacheKey);
+if (!contentText) {
+  const resp = UrlFetchApp.fetch(url, { muteHttpExceptions: true, headers: { "User-Agent": "Mozilla/5.0" } });
+  if (resp.getResponseCode() !== 200) return null;
+  contentText = resp.getContentText();
+} 
+  const json = JSON.parse(contentText);
 
-    const resp = UrlFetchApp.fetch(url, {
-      muteHttpExceptions: true,
-      headers: { "User-Agent": "Mozilla/5.0" }
-    });
-
-
-    if (resp.getResponseCode() !== 200) return null;
-
-
-    const json   = JSON.parse(resp.getContentText());
     const result = json?.chart?.result?.[0];
     if (!result) return null;
 
