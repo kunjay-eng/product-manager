@@ -108,6 +108,63 @@ function _getLowestBuyPriceMapsByMarket() {
   return { us: usMap, th: thMap };
 }
 
+
+
+// เพิ่มฟังก์ชัน backend เบาๆ ที่ดึง Yahoo Finance ของ**ทุกตัวพร้อมกันในคำขอเดียว** (`UrlFetchApp.fetchAll`) แทนยิงทีละตัว และดึงย้อนหลังแค่ 3 เดือน (พอสำหรับ MA20/50) แทน 1 ปี
+
+function getWatchlistTrendsBatch(items) {
+  const result = {};
+  if (!items || !items.length) return result;
+
+  const requests = items.map(it => {
+    const symbol = (String(it.market).toUpperCase() === 'TH')
+      ? (String(it.ticker).toUpperCase() + '.BK') : String(it.ticker).toUpperCase();
+    return {
+      url: 'https://query1.finance.yahoo.com/v8/finance/chart/' + encodeURIComponent(symbol) + '?range=3mo&interval=1d',
+      muteHttpExceptions: true
+    };
+  });
+
+  let responses;
+  try {
+    responses = UrlFetchApp.fetchAll(requests); // ← ยิงขนานทีเดียวทั้งชุด แทนที่จะทีละตัว
+  } catch (e) {
+    logError('getWatchlistTrendsBatch:fetchAll', e);
+    items.forEach(it => { result[it.ticker + '_' + it.market] = { success: false }; });
+    return result;
+  }
+
+  items.forEach((it, i) => {
+    const key = it.ticker + '_' + it.market;
+    try {
+      const res = responses[i];
+      if (res.getResponseCode() !== 200) { result[key] = { success: false }; return; }
+      const json = JSON.parse(res.getContentText());
+      const chartResult = json.chart && json.chart.result && json.chart.result[0];
+      const closesRaw = chartResult && chartResult.indicators && chartResult.indicators.quote[0]
+        ? chartResult.indicators.quote[0].close : null;
+      if (!closesRaw) { result[key] = { success: false }; return; }
+      const closes = closesRaw.filter(v => v !== null && v !== undefined);
+      if (closes.length < 20) { result[key] = { success: false }; return; }
+
+      const ma20 = _wlCalcSMA(closes, 20);
+      const ma50 = _wlCalcSMA(closes, Math.min(50, closes.length));
+      const price = closes[closes.length - 1];
+
+      let trendClass;
+      if (ma20 && ma50 && price > ma20 && ma20 > ma50) trendClass = 'safe';
+      else if (ma20 && ma50 && price < ma20 && ma20 < ma50) trendClass = 'stop';
+      else trendClass = 'warn';
+
+      result[key] = { success: true, trendClass };
+    } catch (e) {
+      result[key] = { success: false };
+    }
+  });
+
+  return result;
+}
+
 // ══════════════════════════════════════════════════════════
 // เพิ่มหุ้นเข้า Watchlist — เช็คซ้ำ + ดึงราคาปัจจุบันจาก Yahoo Finance มา snapshot
 // ══════════════════════════════════════════════════════════
